@@ -6,6 +6,7 @@ extern crate lazy_static;
 
 use pyo3::prelude::*;
 use std::io;
+use numpy::{IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn};
 
 pub mod shapes;
 pub mod mask;
@@ -18,15 +19,20 @@ fn roaring_landmask(py: Python, m: &PyModule) -> PyResult<()> {
         Ok(true)
     }
 
+    m.add_class::<MaskShape>()?;
+
     Ok(())
 }
 
+#[pyclass]
 pub struct MaskShape {
     mask: RoaringLandmask,
     shapes: shapes::Gshhg
 }
 
+#[pymethods]
 impl MaskShape {
+    #[staticmethod]
     pub fn new() -> io::Result<MaskShape> {
         let mask = RoaringLandmask::from_compressed("mask.tbmap.xz")?;
         let shapes = shapes::Gshhg::from_compressed(&shapes::GSHHS_F)?;
@@ -36,6 +42,13 @@ impl MaskShape {
 
     pub fn contains(&self, x: f64, y: f64) -> bool {
         self.mask.contains(x,y) && self.shapes.contains(x, y)
+    }
+
+    pub fn contains_many(&self, x: PyReadonlyArrayDyn<f64>, y: PyReadonlyArrayDyn<f64>) -> Vec<bool> {
+        let x = x.as_array();
+        let y = y.as_array();
+
+        x.iter().zip(y.iter()).map(|(x, y)| self.contains(*x, *y)).collect()
     }
 }
 
