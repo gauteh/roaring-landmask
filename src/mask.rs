@@ -1,6 +1,7 @@
 use roaring::RoaringTreemap;
 use std::fs::File;
 use std::io;
+use std::iter::FromIterator;
 use std::path::Path;
 
 pub const NY: u64 = 43200;
@@ -83,8 +84,8 @@ impl RoaringLandmask {
     ///
     /// Returns `true` if the point is on land or close to the shore.
     pub fn contains(&self, x: f64, y: f64) -> bool {
-        debug_assert!(x > -180.);
-        debug_assert!(y > -90.);
+        debug_assert!(x >= -180.);
+        debug_assert!(y >= -90.);
 
         let (x, y) = TRANSFORM.apply(x, y);
         let x = x as u64;
@@ -94,6 +95,21 @@ impl RoaringLandmask {
         debug_assert!(y < NY);
 
         self.tmap.contains(y * NX + x)
+    }
+
+    pub fn contains_intersect<I: Iterator<Item = (f64, f64)>>(&self, pts: I) -> Vec<bool> {
+        let mut pts = RoaringTreemap::from_iter(pts.map(|(x, y)| {
+            let (x, y) = TRANSFORM.apply(x, y);
+            let x = x as u64;
+            let y = y as u64;
+
+            y * NX + x
+        }));
+
+        pts &= &self.tmap;
+
+        // pts.into_iter().map(|idx| idx
+        Vec::new()
     }
 }
 
@@ -166,16 +182,20 @@ mod tests {
     fn test_contains_many(b: &mut Bencher) {
         let mask = RoaringLandmask::from_compressed("mask.tbmap.xz").unwrap();
 
-        let pts = (0..360*2)
+        let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
             .map(|v| v as f64 * 0.5 - 180.)
-            .map(|x| (0..180*2).map(|y| y as f64 * 0.5 - 90.).map(move |y| (x, y)))
+            .map(|x| {
+                (0..180 * 2)
+                    .map(|y| y as f64 * 0.5 - 90.)
+                    .map(move |y| (x, y))
+            })
             .flatten()
-            .collect::<Vec<(f64, f64)>>();
+            .unzip();
 
-        println!("testing {} points..", pts.len());
+        println!("testing {} points..", x.len());
 
         b.iter(|| {
-            let _onland = pts.iter().map(|(x, y)| mask.contains(*x, *y)).collect::<Vec<bool>>();
+            let _onland = x.iter().zip(y.iter()).map(|(x, y)| mask.contains(*x, *y)).collect::<Vec<bool>>();
         })
     }
 }
