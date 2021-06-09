@@ -102,6 +102,16 @@ mod tests {
     use super::*;
     use test::Bencher;
 
+    #[test]
+    fn required_size() {
+        println!("upper bound coordinate system: {}", NY * NX);
+
+        let mask = RoaringLandmask::from_compressed("mask.tbmap.xz").unwrap();
+        println!("maximum in tree: {:?}", mask.tmap.max());
+
+        assert!(mask.tmap.max().unwrap() <= std::u32::MAX as u64);
+    }
+
     #[bench]
     fn load_tmap(b: &mut Bencher) {
         b.iter(|| {

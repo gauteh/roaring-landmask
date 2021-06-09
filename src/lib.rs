@@ -1,4 +1,13 @@
+#![feature(test)]
+extern crate test;
+
+#[macro_use]
+extern crate lazy_static;
+
 use pyo3::prelude::*;
+
+pub mod mask;
+pub use mask::{Affine, RoaringLandmask};
 
 #[pymodule]
 fn roaring_landmask(py: Python, m: &PyModule) -> PyResult<()> {
