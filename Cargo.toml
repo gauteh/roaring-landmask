@@ -1,0 +1,18 @@
+[package]
+authors = ["Gaute Hope <eg@gaute.vetsj.com>"]
+description = "A fast and low-memory structure with a landmask based on GSHHG for determing whether a point on Earth is on land or in the ocean"
+name = "roaring-landmask"
+version = "0.1.0"
+edition = "2018"
+
+[lib]
+name = "roaring_landmask"
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+pyo3 = "0.13.2"
+roaring = "0.7.0"
+
+[features]
+default = ["extension-module"]
+extension-module = ["pyo3/extension-module"]
