@@ -4,6 +4,9 @@ description = "A fast and limited-memory structure with a landmask based on GSHH
 name = "roaring-landmask"
 version = "0.1.0"
 edition = "2018"
+license = "MIT"
+homepage = "https://github.com/gauteh/roaring-landmask"
+repository = "https://github.com/gauteh/roaring-landmask"
 
 [lib]
 name = "roaring_landmask"
