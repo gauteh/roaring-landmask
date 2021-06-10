@@ -14,18 +14,16 @@ name = "make_bitmap"
 path = "src/devel/make_bitmap.rs"
 
 [dependencies]
-geo = "0.18.0"
 geos = "8.0.0"
 lazy_static = "1.4.0"
 numpy = "0.13.1"
 pyo3 = "0.13.2"
 roaring = "0.7.0"
-wkb = "0.7.1"
 xz2 = "0.1.6"
 
 [features]
-default = ["extension-module"]
 extension-module = ["pyo3/extension-module"]
+default = ["extension-module"]
 
 [profile.release]
 debug = true

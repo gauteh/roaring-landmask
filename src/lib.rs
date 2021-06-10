@@ -6,49 +6,54 @@ extern crate lazy_static;
 
 use pyo3::prelude::*;
 use std::io;
-use numpy::{IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn};
+use numpy::{PyArray, PyReadonlyArrayDyn};
 
 pub mod shapes;
 pub mod mask;
-pub use mask::{Affine, RoaringLandmask};
+
+pub use mask::RoaringMask;
+pub use shapes::Gshhg;
 
 #[pymodule]
-fn roaring_landmask(py: Python, m: &PyModule) -> PyResult<()> {
-    #[pyfn(m, "im_alive")]
-    fn im_alive(_py: Python) -> PyResult<bool> {
-        Ok(true)
-    }
-
-    m.add_class::<MaskShape>()?;
+fn roaring_landmask(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<mask::Affine>()?;
+    m.add_class::<RoaringMask>()?;
+    m.add_class::<Gshhg>()?;
+    m.add_class::<RoaringLandmask>()?;
 
     Ok(())
 }
 
 #[pyclass]
-pub struct MaskShape {
-    mask: RoaringLandmask,
-    shapes: shapes::Gshhg
+pub struct RoaringLandmask {
+    #[pyo3(get)]
+    pub mask: RoaringMask,
+    #[pyo3(get)]
+    pub shapes: shapes::Gshhg
 }
 
 #[pymethods]
-impl MaskShape {
+impl RoaringLandmask {
     #[staticmethod]
-    pub fn new() -> io::Result<MaskShape> {
-        let mask = RoaringLandmask::from_compressed("mask.tbmap.xz")?;
+    pub fn new() -> io::Result<RoaringLandmask> {
+        let mask = RoaringMask::from_compressed("mask.tbmap.xz")?;
         let shapes = shapes::Gshhg::from_compressed(&shapes::GSHHS_F)?;
 
-        Ok(MaskShape { mask, shapes })
+        Ok(RoaringLandmask { mask, shapes })
     }
 
     pub fn contains(&self, x: f64, y: f64) -> bool {
         self.mask.contains(x,y) && self.shapes.contains(x, y)
     }
 
-    pub fn contains_many(&self, x: PyReadonlyArrayDyn<f64>, y: PyReadonlyArrayDyn<f64>) -> Vec<bool> {
+    pub fn contains_many(&self, py: Python, x: PyReadonlyArrayDyn<f64>, y: PyReadonlyArrayDyn<f64>) -> Py<PyArray<bool, numpy::Ix1>> {
         let x = x.as_array();
         let y = y.as_array();
 
-        x.iter().zip(y.iter()).map(|(x, y)| self.contains(*x, *y)).collect()
+        PyArray::from_exact_iter(
+            py,
+            x.iter().zip(y.iter()).map(|(x, y)| self.contains(*x, *y))
+        ).to_owned()
     }
 }
 
@@ -59,12 +64,12 @@ mod tests {
 
     #[test]
     fn load_ms() {
-        let _ms = MaskShape::new().unwrap();
+        let _ms = RoaringLandmask::new().unwrap();
     }
 
     #[bench]
     fn test_contains_on_land(b: &mut Bencher) {
-        let mask = MaskShape::new().unwrap();
+        let mask = RoaringLandmask::new().unwrap();
 
         assert!(mask.contains(15., 65.6));
         assert!(mask.contains(10., 60.0));
@@ -74,27 +79,10 @@ mod tests {
 
     #[bench]
     fn test_contains_in_ocean(b: &mut Bencher) {
-        let mask = MaskShape::new().unwrap();
+        let mask = RoaringLandmask::new().unwrap();
 
         assert!(!mask.contains(5., 65.6));
 
         b.iter(|| mask.contains(5., 65.6))
     }
-
-    // #[bench]
-    // fn test_contains_many(b: &mut Bencher) {
-    //     let mask = MaskShape::new().unwrap();
-
-    //     let pts = (0..360*2)
-    //         .map(|v| v as f64 * 0.5 - 180.)
-    //         .map(|x| (0..180*2).map(|y| y as f64 * 0.5 - 90.).map(move |y| (x, y)))
-    //         .flatten()
-    //         .collect::<Vec<(f64, f64)>>();
-
-    //     println!("testing {} points..", pts.len());
-
-    //     b.iter(|| {
-    //         let _onland = pts.iter().map(|(x, y)| mask.contains(*x, *y)).collect::<Vec<bool>>();
-    //     })
-    // }
 }

@@ -1,3 +1,4 @@
+use pyo3::prelude::*;
 use std::fs::File;
 use std::io::{self, prelude::*};
 use std::path::Path;
@@ -6,9 +7,21 @@ use geos::{CoordSeq, Geom, Geometry, PreparedGeometry};
 
 pub static GSHHS_F: &str = "gshhs_f_-180.000000E-90.000000N180.000000E90.000000N.wkb.xz";
 
+#[pyclass]
 pub struct Gshhg {
+    #[allow(dead_code)]
     g: Geometry<'static>,
+
     geometry: PreparedGeometry<'static>, // this one actually requires `g` above to be around
+}
+
+impl Clone for Gshhg {
+    fn clone(&self) -> Self {
+        let g = Clone::clone(&self.g);
+        let geometry = g.to_prepared_geom().unwrap();
+
+        Gshhg { g, geometry }
+    }
 }
 
 impl Gshhg {
@@ -18,14 +31,16 @@ impl Gshhg {
         let mut fd = xz2::bufread::XzDecoder::new(fd);
         let mut buf = Vec::new();
         fd.read_to_end(&mut buf)?;
+
         let g = geos::Geometry::new_from_wkb(&buf).unwrap();
-        // let geometry = PreparedGeometry::new(&geometry).unwrap();
         let geometry = g.to_prepared_geom().unwrap();
-        // let geometry = fd.read_wkb().map_err(|_e| io::Error::new(io::ErrorKind::InvalidData, "failed to parse wkb"))?;
 
         Ok(Gshhg { g, geometry })
     }
+}
 
+#[pymethods]
+impl Gshhg {
     /// Check if point (x, y) is on land.
     ///
     /// `x` is longitude, [-180, 180] north

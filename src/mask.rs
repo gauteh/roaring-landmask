@@ -1,33 +1,45 @@
 use roaring::RoaringTreemap;
 use std::fs::File;
 use std::io;
-use std::iter::FromIterator;
 use std::path::Path;
+use pyo3::prelude::*;
 
 pub const NY: u64 = 43200;
 pub const NX: u64 = 86400;
 
 lazy_static! {
-    static ref TRANSFORM: Affine<f64> = Affine::make();
+    static ref TRANSFORM: Affine = Affine::make();
 }
 
-pub struct RoaringLandmask {
+#[pyclass]
+#[derive(Clone,Debug,Default)]
+pub struct RoaringMask {
     tmap: RoaringTreemap,
 }
 
-pub struct Affine<T> {
-    sa: T,
-    sb: T,
-    sc: T,
-    sd: T,
-    se: T,
-    sf: T,
+#[pyclass]
+#[derive(Clone,Debug,Default)]
+pub struct Affine {
+    #[pyo3(get)]
+    sa: f64,
+    #[pyo3(get)]
+    sb: f64,
+    #[pyo3(get)]
+    sc: f64,
+    #[pyo3(get)]
+    sd: f64,
+    #[pyo3(get)]
+    se: f64,
+    #[pyo3(get)]
+    sf: f64,
 }
 
-impl Affine<f64> {
+#[pymethods]
+impl Affine {
     /// Makes the inverse transform for the landmask image. Goes from latitude, longitude
     /// coordinates to index in mask.
-    pub fn make() -> Affine<f64> {
+    #[staticmethod]
+    pub fn make() -> Affine {
         // Forward transformation is declared as follows:
         //
         // let resx: f64 = (180f64 - (-180f64)) / (NX as f64);
@@ -55,13 +67,13 @@ impl Affine<f64> {
     }
 }
 
-impl RoaringLandmask {
+impl RoaringMask {
     pub fn from<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let fd = File::open(path)?;
         let fd = io::BufReader::new(fd);
         let tmap = RoaringTreemap::deserialize_from(fd)?;
 
-        Ok(RoaringLandmask { tmap })
+        Ok(RoaringMask { tmap })
     }
 
     pub fn from_compressed<P: AsRef<Path>>(path: P) -> io::Result<Self> {
@@ -70,9 +82,12 @@ impl RoaringLandmask {
         let fd = xz2::bufread::XzDecoder::new(fd);
         let tmap = RoaringTreemap::deserialize_from(fd)?;
 
-        Ok(RoaringLandmask { tmap })
+        Ok(RoaringMask { tmap })
     }
+}
 
+#[pymethods]
+impl RoaringMask {
     /// Check if point (x, y) is on land.
     ///
     /// `x` is longitude, [-180, 180] north
@@ -96,21 +111,6 @@ impl RoaringLandmask {
 
         self.tmap.contains(y * NX + x)
     }
-
-    pub fn contains_intersect<I: Iterator<Item = (f64, f64)>>(&self, pts: I) -> Vec<bool> {
-        let mut pts = RoaringTreemap::from_iter(pts.map(|(x, y)| {
-            let (x, y) = TRANSFORM.apply(x, y);
-            let x = x as u64;
-            let y = y as u64;
-
-            y * NX + x
-        }));
-
-        pts &= &self.tmap;
-
-        // pts.into_iter().map(|idx| idx
-        Vec::new()
-    }
 }
 
 #[cfg(test)]
@@ -122,7 +122,7 @@ mod tests {
     fn required_size() {
         println!("upper bound coordinate system: {}", NY * NX);
 
-        let mask = RoaringLandmask::from_compressed("mask.tbmap.xz").unwrap();
+        let mask = RoaringMask::from_compressed("mask.tbmap.xz").unwrap();
         println!("maximum in tree: {:?}", mask.tmap.max());
 
         assert!(mask.tmap.max().unwrap() <= std::u32::MAX as u64);
@@ -131,14 +131,14 @@ mod tests {
     #[bench]
     fn load_tmap(b: &mut Bencher) {
         b.iter(|| {
-            let _mask = RoaringLandmask::from("mask.tbmap").unwrap();
+            let _mask = RoaringMask::from("mask.tbmap").unwrap();
         })
     }
 
     #[bench]
     fn load_tmap_compressed(b: &mut Bencher) {
         b.iter(|| {
-            let _mask = RoaringLandmask::from_compressed("mask.tbmap.xz").unwrap();
+            let _mask = RoaringMask::from_compressed("mask.tbmap.xz").unwrap();
         })
     }
 
@@ -161,7 +161,7 @@ mod tests {
 
     #[bench]
     fn test_contains_on_land(b: &mut Bencher) {
-        let mask = RoaringLandmask::from_compressed("mask.tbmap.xz").unwrap();
+        let mask = RoaringMask::from_compressed("mask.tbmap.xz").unwrap();
 
         assert!(mask.contains(15., 65.6));
         assert!(mask.contains(10., 60.0));
@@ -171,7 +171,7 @@ mod tests {
 
     #[bench]
     fn test_contains_in_ocean(b: &mut Bencher) {
-        let mask = RoaringLandmask::from_compressed("mask.tbmap.xz").unwrap();
+        let mask = RoaringMask::from_compressed("mask.tbmap.xz").unwrap();
 
         assert!(!mask.contains(5., 65.6));
 
@@ -180,7 +180,7 @@ mod tests {
 
     #[bench]
     fn test_contains_many(b: &mut Bencher) {
-        let mask = RoaringLandmask::from_compressed("mask.tbmap.xz").unwrap();
+        let mask = RoaringMask::from_compressed("mask.tbmap.xz").unwrap();
 
         let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
             .map(|v| v as f64 * 0.5 - 180.)
