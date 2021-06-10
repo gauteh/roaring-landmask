@@ -7,12 +7,17 @@ extern crate lazy_static;
 use pyo3::prelude::*;
 use std::io;
 use numpy::{PyArray, PyReadonlyArrayDyn};
+use rust_embed::RustEmbed;
 
 pub mod shapes;
 pub mod mask;
 
 pub use mask::RoaringMask;
 pub use shapes::Gshhg;
+
+#[derive(RustEmbed)]
+#[folder = "gshhs"]
+pub struct GsshgData;
 
 #[pymodule]
 fn roaring_landmask(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -36,8 +41,8 @@ pub struct RoaringLandmask {
 impl RoaringLandmask {
     #[staticmethod]
     pub fn new() -> io::Result<RoaringLandmask> {
-        let mask = RoaringMask::from_compressed("mask.tbmap.xz")?;
-        let shapes = shapes::Gshhg::from_compressed(&shapes::GSHHS_F)?;
+        let mask = RoaringMask::new()?;
+        let shapes = Gshhg::new()?;
 
         Ok(RoaringLandmask { mask, shapes })
     }

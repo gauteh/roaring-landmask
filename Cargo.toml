@@ -19,6 +19,7 @@ lazy_static = "1.4.0"
 numpy = "0.13.1"
 pyo3 = "0.13.2"
 roaring = "0.7.0"
+rust-embed = "5.9.0"
 xz2 = "0.1.6"
 
 [features]

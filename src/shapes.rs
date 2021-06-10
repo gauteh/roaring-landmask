@@ -2,6 +2,7 @@ use pyo3::prelude::*;
 use std::fs::File;
 use std::io::{self, prelude::*};
 use std::path::Path;
+use std::borrow::Borrow;
 
 use geos::{CoordSeq, Geom, Geometry, PreparedGeometry};
 
@@ -41,6 +42,24 @@ impl Gshhg {
 
 #[pymethods]
 impl Gshhg {
+    #[staticmethod]
+    /// Make a new Gshhg shapes instance.
+    pub fn new() -> io::Result<Self> {
+        use crate::GsshgData;
+
+        let buf = GsshgData::get(&GSHHS_F).ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "cannot find shapes"))?;
+        let buf: &[u8] = buf.borrow();
+        let mut fd = xz2::read::XzDecoder::new(buf);
+
+        let mut buf = Vec::new();
+        fd.read_to_end(&mut buf)?;
+
+        let g = geos::Geometry::new_from_wkb(&buf).unwrap();
+        let geometry = g.to_prepared_geom().unwrap();
+
+        Ok(Gshhg { g, geometry })
+    }
+
     /// Check if point (x, y) is on land.
     ///
     /// `x` is longitude, [-180, 180] north
@@ -60,13 +79,18 @@ mod tests {
     use test::Bencher;
 
     #[test]
+    fn test_load_compressed() {
+        let _s = Gshhg::from_compressed("gshhs/gshhs_f_-180.000000E-90.000000N180.000000E90.000000N.wkb.xz").unwrap();
+    }
+
+    #[test]
     fn test_load() {
-        let _s = Gshhg::from_compressed(&GSHHS_F).unwrap();
+        let _s = Gshhg::new().unwrap();
     }
 
     #[bench]
     fn test_contains_on_land(b: &mut Bencher) {
-        let s = Gshhg::from_compressed(&GSHHS_F).unwrap();
+        let s = Gshhg::new().unwrap();
 
         assert!(s.contains(15., 65.6));
         assert!(s.contains(10., 60.0));
@@ -76,7 +100,7 @@ mod tests {
 
     #[bench]
     fn test_contains_in_ocean(b: &mut Bencher) {
-        let s = Gshhg::from_compressed(&GSHHS_F).unwrap();
+        let s = Gshhg::new().unwrap();
 
         assert!(!s.contains(5., 65.6));
 
