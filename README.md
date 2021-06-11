@@ -2,11 +2,11 @@
 
 Have you ever needed to know whether you are in the ocean or on land? And you
 need to know it fast? And you need to know it without using too much memory or
-too much disk? Then try the _Roaring Landmask_!.
+too much disk? Then try the _Roaring Landmask_!
 
 The _roaring landmask_ is a Rust + Python package for quickly determining
 whether a point given in latitude and longitude is on land or not. A landmask
-is stored in a tree of [roaring bitmap](https://roaringbitmap.org/). Points
+is stored in a tree of [Roaring Bitmaps](https://roaringbitmap.org/). Points
 close to the shore might still be in the ocean, so a positive
 value is then checked against the vector shapes of the coastline.
 
