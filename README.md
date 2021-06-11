@@ -63,6 +63,12 @@ on_land = l.contains_many(xx.ravel(), yy.ravel())
 
 ## Building & installing
 
+Use [setuptools-rust](https://github.com/PyO3/setuptools-rust):
+
+1) `pip install .`
+
+or use maturin:
+
 1) Install [maturin](https://github.com/PyO3/maturin).
 
 2) Build and install

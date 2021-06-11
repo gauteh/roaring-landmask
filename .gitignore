@@ -2,3 +2,5 @@
 Cargo.lock
 mask.bin
 mask.tbmap
+/.eggs
+/build/
