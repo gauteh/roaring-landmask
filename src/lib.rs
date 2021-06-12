@@ -33,7 +33,7 @@ fn roaring_landmask(_py: Python, m: &PyModule) -> PyResult<()> {
 pub struct RoaringLandmask {
     #[pyo3(get)]
     pub mask: RoaringMask,
-    pub shapes: shapes::Gshhg<'static>
+    pub shapes: shapes::Gshhg<'static, 'static>
 }
 
 #[pymethods]
