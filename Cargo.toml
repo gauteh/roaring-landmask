@@ -7,6 +7,7 @@ edition = "2018"
 license = "MIT"
 homepage = "https://github.com/gauteh/roaring-landmask"
 repository = "https://github.com/gauteh/roaring-landmask"
+exclude = [ "gshhs/*" ]
 
 [lib]
 name = "roaring_landmask"
@@ -24,6 +25,10 @@ pyo3 = "0.13.2"
 roaring = "0.7.0"
 rust-embed = "5.9.0"
 xz2 = "0.1.6"
+
+[build-dependencies]
+reqwest = { version = "0.11", features = [ "blocking" ] }
+ring = "0.16"
 
 [features]
 extension-module = ["pyo3/extension-module"]
