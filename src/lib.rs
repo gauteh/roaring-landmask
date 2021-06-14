@@ -23,7 +23,7 @@ pub struct GsshgData;
 fn roaring_landmask(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<mask::Affine>()?;
     m.add_class::<RoaringMask>()?;
-    // m.add_class::<Gshhg>()?;
+    m.add_class::<Gshhg>()?;
     m.add_class::<RoaringLandmask>()?;
 
     Ok(())
@@ -33,7 +33,8 @@ fn roaring_landmask(_py: Python, m: &PyModule) -> PyResult<()> {
 pub struct RoaringLandmask {
     #[pyo3(get)]
     pub mask: RoaringMask,
-    pub shapes: shapes::Gshhg<'static, 'static>
+    #[pyo3(get)]
+    pub shapes: shapes::Gshhg
 }
 
 #[pymethods]
