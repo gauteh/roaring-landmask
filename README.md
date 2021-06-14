@@ -1,3 +1,6 @@
+[![Crates.io](https://img.shields.io/crates/v/roaring-landmask.svg)](https://crates.io/crates/roaring-landmask)
+[![Documentation](https://docs.rs/roaring-landmask/badge.svg)](https://docs.rs/roaring-landmask/)
+
 # The Roaring Landmask
 
 Have you ever needed to know whether you are in the ocean or on land? And you
