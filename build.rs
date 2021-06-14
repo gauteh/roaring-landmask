@@ -41,8 +41,12 @@ pub struct GsshgData;
     }
 
     // copy or download files
-    copy_or_download(GSHHS_F, GSHHS_F_CS);
-    copy_or_download(MASK, MASK_CS);
+    if env::var("DOCS_RS").is_err() {
+        copy_or_download(GSHHS_F, GSHHS_F_CS);
+        copy_or_download(MASK, MASK_CS);
+    } else {
+        println!("not downloading anything when on docs.rs.");
+    }
 }
 
 fn copy_or_download(from: impl AsRef<Path>, csum: &str) {
