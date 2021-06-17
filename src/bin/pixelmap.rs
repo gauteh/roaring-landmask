@@ -1,24 +1,7 @@
-use geos::{CoordSeq, Geom, Geometry};
 use rayon::prelude::*;
-use roaring::*;
 use roaring_landmask::Gshhg;
 use std::fs::File;
 use std::io::{BufWriter, prelude::*};
-
-fn make_box(x0: f64, y0: f64, dx: f64, dy: f64) -> Geometry<'static> {
-    let coords = CoordSeq::new_from_vec(&[
-        &[y0, x0],
-        &[y0 + dy, x0],
-        &[y0 + dy, x0 + dx],
-        &[y0, x0 + dx],
-        &[y0, x0],
-    ])
-    .unwrap();
-
-    let ext = Geometry::create_linear_ring(coords).unwrap();
-
-    Geometry::create_polygon(ext, Vec::new()).unwrap()
-}
 
 fn main() -> std::io::Result<()> {
     const THDS: usize = 8;
