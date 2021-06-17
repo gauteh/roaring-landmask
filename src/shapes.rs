@@ -13,7 +13,7 @@ pub struct Gshhg {
     geom: *mut Geometry<'static>,
 
     // prepped requires `geom` above to be around, and is valid as long as geom is alive.
-    prepped: PreparedGeometry<'static>,
+    pub prepped: PreparedGeometry<'static>,
 }
 
 impl Drop for Gshhg {
@@ -24,6 +24,7 @@ impl Drop for Gshhg {
 
 // PreparedGeometry is Send, Geometry is Send. *mut Geometry is never modified.
 unsafe impl Send for Gshhg {}
+unsafe impl Sync for Gshhg {}
 
 impl Clone for Gshhg {
     fn clone(&self) -> Self {

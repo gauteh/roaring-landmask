@@ -17,6 +17,14 @@ crate-type = ["rlib", "cdylib"]
 name = "make_bitmap"
 path = "src/devel/make_bitmap.rs"
 
+[[bin]]
+name = "rasterize"
+path = "src/devel/rasterize.rs"
+
+[[bin]]
+name = "rasterize2"
+path = "src/devel/rasterize2.rs"
+
 [dependencies]
 geos = "8.0.1"
 lazy_static = "1.4.0"
@@ -25,6 +33,7 @@ pyo3 = "0.13.2"
 roaring = "0.7.0"
 rust-embed = "5.9.0"
 xz2 = "0.1.6"
+rayon = "*"
 
 [build-dependencies]
 reqwest = { version = "0.11", features = [ "blocking" ] }

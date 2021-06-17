@@ -15,7 +15,7 @@ lazy_static! {
 #[pyclass]
 #[derive(Clone,Debug,Default)]
 pub struct RoaringMask {
-    tmap: RoaringTreemap,
+    pub tmap: RoaringTreemap,
 }
 
 #[pyclass]
