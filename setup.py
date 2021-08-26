@@ -5,7 +5,7 @@ from setuptools_rust import RustExtension, Binding
 
 setuptools.setup(
     name='roaring-landmask',
-    version='0.1.0',
+    version='0.2.1',
     description='A fast and limited-memory structure with a landmask based on GSHHG for determing whether a point on Earth is on land or in the ocean',
     author='Gaute Hope',
     author_email='eg@gaute.vetsj.com',
