@@ -14,7 +14,7 @@ setuptools.setup(
     include_package_data=False,
     setup_requires=['setuptools_scm'],
     rust_extensions=[
-        RustExtension("roaring_landmask",
+        RustExtension("roaring_landmask.roaring_landmask",
                       "Cargo.toml",
                       binding=Binding.PyO3,
                       features=["extension-module"],
