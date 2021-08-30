@@ -4,3 +4,4 @@ mask.bin
 mask.tbmap
 /.eggs
 /build/
+roaring_landmask.egg-info

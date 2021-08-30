@@ -98,11 +98,21 @@ impl RoaringLandmask {
         Ok(RoaringLandmask { mask, shapes })
     }
 
+    #[getter]
+    pub fn dx(&self) -> f64 {
+        self.mask.dx()
+    }
+
+    #[getter]
+    pub fn dy(&self) -> f64 {
+        self.mask.dy()
+    }
+
     pub fn contains(&self, x: f64, y: f64) -> bool {
         self.mask.contains(x, y) && self.shapes.contains(x, y)
     }
 
-    pub fn contains_many(
+    fn contains_many(
         &self,
         py: Python,
         x: PyReadonlyArrayDyn<f64>,

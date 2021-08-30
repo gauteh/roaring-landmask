@@ -4,6 +4,7 @@ use std::io;
 use std::path::Path;
 use pyo3::prelude::*;
 use std::borrow::Borrow;
+use numpy::{PyArray, PyReadonlyArrayDyn};
 
 pub const NY: u64 = 43200;
 pub const NX: u64 = 86400;
@@ -95,6 +96,16 @@ impl RoaringMask {
         Ok(RoaringMask { tmap })
     }
 
+    #[getter]
+    pub fn dx(&self) -> f64 {
+        (180f64 - (-180f64)) / (NX as f64)
+    }
+
+    #[getter]
+    pub fn dy(&self) -> f64 {
+        (180f64 - (-180f64)) / (NX as f64)
+    }
+
     /// Check if point (x, y) is on land.
     ///
     /// `x` is longitude, [-180, 180] north
@@ -117,6 +128,22 @@ impl RoaringMask {
         debug_assert!(y < NY);
 
         self.tmap.contains(y * NX + x)
+    }
+
+    pub fn contains_many(
+        &self,
+        py: Python,
+        x: PyReadonlyArrayDyn<f64>,
+        y: PyReadonlyArrayDyn<f64>,
+    ) -> Py<PyArray<bool, numpy::Ix1>> {
+        let x = x.as_array();
+        let y = y.as_array();
+
+        PyArray::from_exact_iter(
+            py,
+            x.iter().zip(y.iter()).map(|(x, y)| self.contains(*x, *y)),
+        )
+        .to_owned()
     }
 }
 

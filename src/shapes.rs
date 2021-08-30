@@ -5,6 +5,7 @@ use std::io::{self, prelude::*};
 use std::path::Path;
 
 use geos::{CoordSeq, Geom, Geometry, PreparedGeometry};
+use numpy::{PyArray, PyReadonlyArrayDyn};
 
 pub static GSHHS_F: &str = "gshhs_f_-180.000000E-90.000000N180.000000E90.000000N.wkb.xz";
 
@@ -93,6 +94,22 @@ impl Gshhg {
         let point = CoordSeq::new_from_vec(&[&[x, y]]).unwrap();
         let point = Geometry::create_point(point).unwrap();
         self.prepped.contains(&point).unwrap()
+    }
+
+    pub fn contains_many(
+        &self,
+        py: Python,
+        x: PyReadonlyArrayDyn<f64>,
+        y: PyReadonlyArrayDyn<f64>,
+    ) -> Py<PyArray<bool, numpy::Ix1>> {
+        let x = x.as_array();
+        let y = y.as_array();
+
+        PyArray::from_exact_iter(
+            py,
+            x.iter().zip(y.iter()).map(|(x, y)| self.contains(*x, *y)),
+        )
+        .to_owned()
     }
 }
 
