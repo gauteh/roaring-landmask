@@ -2,6 +2,7 @@ use std::env;
 use std::fs;
 use std::io::prelude::*;
 use std::path::Path;
+use path_slash::PathExt;
 
 pub static GSHHS_F: &str = "gshhs_f_-180.000000E-90.000000N180.000000E90.000000N.wkb.xz";
 pub static GSHHS_F_CS: &str = "05bdf3089407b9829a7a5be7ee43f1e4205f2bbc641e4778af77e4814be216da";
@@ -30,7 +31,7 @@ use rust_embed::RustEmbed;
 pub struct GsshgData;
 
         ",
-            assets_dir.to_str().unwrap()
+            assets_dir.to_slash().unwrap()
         )
         .unwrap();
     }
