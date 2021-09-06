@@ -29,7 +29,7 @@ jobs:
       - name: Install built wheel - x86_64
         run: |
           pip install roaring-landmask --no-index --find-links dist --force-reinstall
-          pip install pytest
+          pip install pytest pytest-benchmark numpy
           cd tests && pytest
       - name: Build wheels - universal2
         uses: messense/maturin-action@v1
@@ -70,7 +70,7 @@ jobs:
       - name: Install built wheel
         run: |
           pip install roaring-landmask --no-index --find-links dist --force-reinstall
-          pip install pytest
+          pip install pytest pytest-benchmark numpy
           cd tests && pytest
       - name: Upload wheels
         uses: actions/upload-artifact@v2
