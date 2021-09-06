@@ -100,7 +100,7 @@ jobs:
       if: matrix.target == 'x86_64'
       run: |
         pip install roaring-landmask --no-index --find-links dist --force-reinstall
-        pip install pytest
+        pip install pytest pytest-benchmark
         cd tests && pytest
     - name: Upload wheels
       uses: actions/upload-artifact@v2
