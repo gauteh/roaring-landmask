@@ -70,8 +70,8 @@ jobs:
       - name: Install built wheel
         run: |
           pip install roaring-landmask --no-index --find-links dist --force-reinstall
-          pip install pytest pytest-benchmark numpy
-          cd tests && pytest -sv --log-cli-level=debug
+          # pip install pytest pytest-benchmark numpy
+          # cd tests && pytest -sv --log-cli-level=debug
       - name: Upload wheels
         uses: actions/upload-artifact@v2
         with:
@@ -167,4 +167,4 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: |
           pip install --upgrade twine
-          twine upload -r testpypi --skip-existing *
+          twine upload --skip-existing *
