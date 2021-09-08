@@ -23,8 +23,9 @@ impl Drop for Gshhg {
     }
 }
 
-// PreparedGeometry is Send, Geometry is Send. *mut Geometry is never modified.
+// PreparedGeometry is Send+Sync, Geometry is Send+Sync. *mut Geometry is never modified.
 unsafe impl Send for Gshhg {}
+unsafe impl Sync for Gshhg {}
 
 impl Clone for Gshhg {
     fn clone(&self) -> Self {
@@ -53,15 +54,19 @@ impl Gshhg {
     }
 
     pub fn from_compressed<P: AsRef<Path>>(path: P) -> io::Result<Gshhg> {
+        let g = Gshhg::get_geometry_from_compressed(path)?;
+
+        Gshhg::from_geom(g)
+    }
+
+    pub fn get_geometry_from_compressed<P: AsRef<Path>>(path: P) -> io::Result<Geometry<'static>> {
         let fd = File::open(path)?;
         let fd = io::BufReader::new(fd);
         let mut fd = xz2::bufread::XzDecoder::new(fd);
         let mut buf = Vec::new();
         fd.read_to_end(&mut buf)?;
 
-        let g = geos::Geometry::new_from_wkb(&buf).unwrap();
-
-        Gshhg::from_geom(g)
+        Ok(geos::Geometry::new_from_wkb(&buf).unwrap())
     }
 }
 
