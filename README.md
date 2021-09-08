@@ -1,5 +1,7 @@
 [![Crates.io](https://img.shields.io/crates/v/roaring-landmask.svg)](https://crates.io/crates/roaring-landmask)
 [![Documentation](https://docs.rs/roaring-landmask/badge.svg)](https://docs.rs/roaring-landmask/)
+[![PyPI](https://img.shields.io/pypi/v/roaring-landmask.svg?style=flat-square)](https://pypi.org/project/roaring-landmask/)
+[![Actions Status](https://github.com/gauteh/roaring-landmask/workflows/Build%20wheels/badge.svg)](https://github.com/gauteh/roaring-landmask/actions)
 
 # The Roaring Landmask
 
@@ -66,11 +68,15 @@ on_land = l.contains_many(xx.ravel(), yy.ravel())
 
 ## Building & installing
 
-Use [setuptools-rust](https://github.com/PyO3/setuptools-rust):
+Pre-built wheels are available on PyPI:
+
+1) `pip install roaring-landmask`
+
+To build from source, you can use pip:
 
 1) `pip install .`
 
-or use maturin:
+or maturin:
 
 1) Install [maturin](https://github.com/PyO3/maturin).
 
