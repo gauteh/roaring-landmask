@@ -27,6 +27,14 @@ impl Drop for Gshhg {
 unsafe impl Send for Gshhg {}
 unsafe impl Sync for Gshhg {}
 
+// `PreparededGeometry::contains` needs a call to `contains` before it is thread-safe:
+// https://github.com/georust/geos/issues/95
+fn warmup_prepped(prepped: &PreparedGeometry<'_>) {
+    let point = CoordSeq::new_from_vec(&[&[0.0, 0.0]]).unwrap();
+    let point = Geometry::create_point(point).unwrap();
+    prepped.contains(&point).unwrap();
+}
+
 impl Clone for Gshhg {
     fn clone(&self) -> Self {
         let gptr = self.geom.clone();
