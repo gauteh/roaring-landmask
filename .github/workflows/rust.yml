@@ -1,5 +1,5 @@
 on: push
-name: Run tests
+name: Rust: build & test
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
