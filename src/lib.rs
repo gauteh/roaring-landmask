@@ -127,6 +127,20 @@ impl RoaringLandmask {
         )
         .to_owned()
     }
+
+    pub fn contains_many_par(
+        &self,
+        py: Python,
+        x: PyReadonlyArrayDyn<f64>,
+        y: PyReadonlyArrayDyn<f64>,
+    ) -> Py<PyArray<bool, numpy::IxDyn>> {
+        let x = x.as_array();
+        let y = y.as_array();
+
+        use ndarray::Zip;
+        let contains = Zip::from(&x).and(&y).par_map_collect(|x, y| self.contains(*x, *y));
+        PyArray::from_owned_array(py, contains).to_owned()
+    }
 }
 
 #[cfg(test)]
@@ -156,5 +170,73 @@ mod tests {
         assert!(!mask.contains(5., 65.6));
 
         b.iter(|| mask.contains(5., 65.6))
+    }
+
+    #[bench]
+    fn test_contains_many(b: &mut Bencher) {
+        let mask = RoaringLandmask::new().unwrap();
+
+        let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
+            .map(|v| v as f64 * 0.5 - 180.)
+            .map(|x| {
+                (0..180 * 2)
+                    .map(|y| y as f64 * 0.5 - 90.)
+                    .map(move |y| (x, y))
+            })
+            .flatten()
+            .unzip();
+
+        pyo3::prepare_freethreaded_python();
+        pyo3::Python::with_gil(|py| {
+
+            let x = PyArray::from_vec(py, x);
+            let y = PyArray::from_vec(py, y);
+
+            println!("testing {} points..", x.len());
+
+            b.iter(|| {
+                let len = x.len();
+
+                let x = x.to_dyn().readonly();
+                let y = y.to_dyn().readonly();
+
+                let onland = mask.contains_many(py, x, y);
+                assert!(onland.as_ref(py).len() == len);
+            })
+        })
+    }
+
+    #[bench]
+    fn test_contains_many_par(b: &mut Bencher) {
+        let mask = RoaringLandmask::new().unwrap();
+
+        let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
+            .map(|v| v as f64 * 0.5 - 180.)
+            .map(|x| {
+                (0..180 * 2)
+                    .map(|y| y as f64 * 0.5 - 90.)
+                    .map(move |y| (x, y))
+            })
+            .flatten()
+            .unzip();
+
+        pyo3::prepare_freethreaded_python();
+        pyo3::Python::with_gil(|py| {
+
+            let x = PyArray::from_vec(py, x);
+            let y = PyArray::from_vec(py, y);
+
+            println!("testing {} points..", x.len());
+
+            b.iter(|| {
+                let len = x.len();
+
+                let x = x.to_dyn().readonly();
+                let y = y.to_dyn().readonly();
+
+                let onland = mask.contains_many_par(py, x, y);
+                assert!(onland.as_ref(py).len() == len);
+            })
+        })
     }
 }

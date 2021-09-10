@@ -21,3 +21,37 @@ def test_landmask_many(benchmark):
 
   print ("points:", len(xx.ravel()))
   benchmark(l.contains_many, xx.ravel(), yy.ravel())
+
+def test_landmask_many_few(benchmark):
+  l = RoaringLandmask.new()
+
+  x = np.linspace(-180, 180, 10)
+  y = np.linspace(-90, 90, 5)
+
+  xx, yy = np.meshgrid(x,y)
+
+  print ("points:", len(xx.ravel()))
+  benchmark(l.contains_many, xx.ravel(), yy.ravel())
+
+def test_landmask_many_par(benchmark):
+  l = RoaringLandmask.new()
+
+  x = np.arange(-180, 180, .5)
+  y = np.arange(-90, 90, .5)
+
+  xx, yy = np.meshgrid(x,y)
+
+  print ("points:", len(xx.ravel()))
+  benchmark(l.contains_many_par, xx.ravel(), yy.ravel())
+
+def test_landmask_many_par_few(benchmark):
+  l = RoaringLandmask.new()
+
+  x = np.linspace(-180, 180, 10)
+  y = np.linspace(-90, 90, 5)
+
+  xx, yy = np.meshgrid(x,y)
+
+  print ("points:", len(xx.ravel()))
+  benchmark(l.contains_many_par, xx.ravel(), yy.ravel())
+

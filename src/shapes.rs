@@ -40,6 +40,7 @@ impl Clone for Gshhg {
         let gptr = self.geom.clone();
         debug_assert!(gptr != self.geom);
         let prepped = unsafe { (&*gptr).to_prepared_geom().unwrap() };
+        warmup_prepped(&prepped);
 
         Gshhg {
             geom: gptr,
@@ -54,6 +55,7 @@ impl Gshhg {
         let gptr = Box::into_raw(bxd);
         let prepped = unsafe { (&*gptr).to_prepared_geom() }
             .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "cannot prepare geomtry"))?;
+        warmup_prepped(&prepped);
 
         Ok(Gshhg {
             geom: gptr,

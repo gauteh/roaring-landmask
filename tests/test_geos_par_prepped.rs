@@ -1,6 +1,7 @@
 use roaring_landmask::Gshhg;
 use geos::{CoordSeq, Geom, Geometry};
 
+#[ignore]
 #[test]
 fn test_par_prepped_no_warmup() {
     use rayon::prelude::*;
