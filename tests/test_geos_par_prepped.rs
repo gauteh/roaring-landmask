@@ -15,7 +15,6 @@ fn test_par_prepped_no_warmup() {
     let prepped = g.to_prepared_geom().unwrap();
 
     (0..10000).into_par_iter().for_each(|k| {
-        assert!(rayon::current_num_threads() > 2);
 
         let x = k % 180;
         let y = (k / 180) % 90;
@@ -44,8 +43,6 @@ fn test_par_prepped_with_warmup() {
     prepped.contains(&point).unwrap();
 
     (0..10000).into_par_iter().for_each(|k| {
-        assert!(rayon::current_num_threads() > 2);
-
         let x = k % 180;
         let y = (k / 180) % 90;
 
