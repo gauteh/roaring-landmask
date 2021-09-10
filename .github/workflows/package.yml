@@ -1,4 +1,4 @@
-name: Python: Build and test wheels
+name: Python Build and test wheels
 
 on:
   push:
