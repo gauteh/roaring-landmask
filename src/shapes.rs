@@ -126,6 +126,20 @@ impl Gshhg {
         )
         .to_owned()
     }
+
+    pub fn contains_many_par(
+        &self,
+        py: Python,
+        x: PyReadonlyArrayDyn<f64>,
+        y: PyReadonlyArrayDyn<f64>,
+    ) -> Py<PyArray<bool, numpy::IxDyn>> {
+        let x = x.as_array();
+        let y = y.as_array();
+
+        use ndarray::Zip;
+        let contains = Zip::from(&x).and(&y).par_map_collect(|x, y| self.contains(*x, *y));
+        PyArray::from_owned_array(py, contains).to_owned()
+    }
 }
 
 #[cfg(test)]
