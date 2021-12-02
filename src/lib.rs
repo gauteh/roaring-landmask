@@ -143,6 +143,11 @@ impl RoaringLandmask {
     }
 }
 
+/// Move longitude into -180 to 180 domain.
+fn modulate_longitude(lon: f64) -> f64 {
+    ((lon + 180.) % 360.) - 180.
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -170,6 +175,41 @@ mod tests {
         assert!(!mask.contains(5., 65.6));
 
         b.iter(|| mask.contains(5., 65.6))
+    }
+
+    #[test]
+    fn test_dateline_wrap() {
+        let mask = RoaringLandmask::new().unwrap();
+
+        // Close to NP
+        assert!(!mask.contains(5., 89.));
+
+        // Close to SP
+        assert!(mask.contains(5., -89.));
+
+        // Within bounds
+        let x = (-180..180).map(f64::from).collect::<Vec<_>>();
+        let m = x.iter().map(|x| mask.contains(*x, 65.)).collect::<Vec<_>>();
+
+        // Wrapped bounds
+        let x = (180..540).map(f64::from).collect::<Vec<_>>();
+        let mm = x.iter().map(|x| mask.contains(*x, 65.)).collect::<Vec<_>>();
+
+        assert_eq!(m, mm);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_not_on_earth_north() {
+        let mask = RoaringLandmask::new().unwrap();
+        assert!(!mask.contains(5., 95.));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_not_on_earth_south() {
+        let mask = RoaringLandmask::new().unwrap();
+        assert!(!mask.contains(5., -95.));
     }
 
     #[bench]

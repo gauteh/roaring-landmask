@@ -106,6 +106,9 @@ impl Gshhg {
     ///
     /// Returns `true` if the point is on land.
     pub fn contains(&self, x: f64, y: f64) -> bool {
+        debug_assert!(x >= -180. && x <= 180.);
+        assert!(y >= -90. && y <= 90.);
+
         let point = CoordSeq::new_from_vec(&[&[x, y]]).unwrap();
         let point = Geometry::create_point(point).unwrap();
         self.prepped.contains(&point).unwrap()

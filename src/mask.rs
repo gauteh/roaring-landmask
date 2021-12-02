@@ -118,14 +118,14 @@ impl RoaringMask {
     /// Returns `true` if the point is on land or close to the shore.
     pub fn contains(&self, x: f64, y: f64) -> bool {
         debug_assert!(x >= -180.);
-        debug_assert!(y >= -90.);
+        assert!(y >= -90.);
 
         let (x, y) = TRANSFORM.apply(x, y);
         let x = x as u64;
         let y = y as u64;
 
         debug_assert!(x < NX);
-        debug_assert!(y < NY);
+        assert!(y < NY);
 
         self.tmap.contains(y * NX + x)
     }
