@@ -1,10 +1,10 @@
+use numpy::{PyArray, PyReadonlyArrayDyn};
+use pyo3::prelude::*;
 use roaring::RoaringTreemap;
+use std::borrow::Borrow;
 use std::fs::File;
 use std::io;
 use std::path::Path;
-use pyo3::prelude::*;
-use std::borrow::Borrow;
-use numpy::{PyArray, PyReadonlyArrayDyn};
 
 pub const NY: u64 = 43200;
 pub const NX: u64 = 86400;
@@ -14,13 +14,13 @@ lazy_static! {
 }
 
 #[pyclass]
-#[derive(Clone,Debug,Default)]
+#[derive(Clone, Debug, Default)]
 pub struct RoaringMask {
     tmap: RoaringTreemap,
 }
 
 #[pyclass]
-#[derive(Clone,Debug,Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Affine {
     #[pyo3(get)]
     sa: f64,
@@ -87,7 +87,8 @@ impl RoaringMask {
     pub fn new() -> io::Result<Self> {
         use crate::GsshgData;
 
-        let buf = GsshgData::get("mask.tbmap.xz").ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "cannot find mask"))?;
+        let buf = GsshgData::get("mask.tbmap.xz")
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "cannot find mask"))?;
         let buf: &[u8] = buf.borrow();
 
         let fd = xz2::read::XzDecoder::new(buf);
@@ -108,8 +109,8 @@ impl RoaringMask {
 
     /// Check if point (x, y) is on land.
     ///
-    /// `x` is longitude, [-180, 180] north
-    /// `y` is latitude,  [- 90,  90] east
+    /// `x` is longitude, [-180, 180] east
+    /// `y` is latitude,  [- 90,  90] north
     ///
     /// The check is _optimistic_, it will yield `true` for points that are closer to the shore
     /// than the resolution of the landmask. The positive points should be checked against the
@@ -117,16 +118,30 @@ impl RoaringMask {
     ///
     /// Returns `true` if the point is on land or close to the shore.
     pub fn contains(&self, x: f64, y: f64) -> bool {
-        debug_assert!(x >= -180.);
+        let x = super::modulate_longitude(x);
+        debug_assert!(x >= -180. && x <= 180.);
         assert!(y >= -90.);
 
         let (x, y) = TRANSFORM.apply(x, y);
         let x = x as u64;
         let y = y as u64;
 
+        // Special case where we are in northernmost cell. North Pole is always in ocean anyway.
+        if y == NY {
+            return false;
+        }
+
         debug_assert!(x < NX);
         assert!(y < NY);
 
+        self.tmap.contains(y * NX + x)
+    }
+
+    /// Same as `contains`, but does not check for bounds.
+    pub(crate) fn contains_unchecked(&self, x: f64, y: f64) -> bool {
+        let (x, y) = TRANSFORM.apply(x, y);
+        let x = x as u64;
+        let y = y as u64;
         self.tmap.contains(y * NX + x)
     }
 
@@ -156,7 +171,9 @@ impl RoaringMask {
         let y = y.as_array();
 
         use ndarray::Zip;
-        let contains = Zip::from(&x).and(&y).par_map_collect(|x, y| self.contains(*x, *y));
+        let contains = Zip::from(&x)
+            .and(&y)
+            .par_map_collect(|x, y| self.contains(*x, *y));
         PyArray::from_owned_array(py, contains).to_owned()
     }
 }
@@ -174,6 +191,18 @@ mod tests {
         println!("maximum in tree: {:?}", mask.tmap.max());
 
         assert!(mask.tmap.max().unwrap() <= std::u32::MAX as u64);
+    }
+
+    #[test]
+    fn test_np() {
+        let mask = RoaringMask::new().unwrap();
+        assert!(!mask.contains(5., 90.));
+    }
+
+    #[test]
+    fn test_sp() {
+        let mask = RoaringMask::new().unwrap();
+        assert!(mask.contains(5., -90.));
     }
 
     #[bench]
@@ -243,7 +272,11 @@ mod tests {
         println!("testing {} points..", x.len());
 
         b.iter(|| {
-            let _onland = x.iter().zip(y.iter()).map(|(x, y)| mask.contains(*x, *y)).collect::<Vec<bool>>();
+            let _onland = x
+                .iter()
+                .zip(y.iter())
+                .map(|(x, y)| mask.contains(*x, *y))
+                .collect::<Vec<bool>>();
         })
     }
 }

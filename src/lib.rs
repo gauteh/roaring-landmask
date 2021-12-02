@@ -108,8 +108,19 @@ impl RoaringLandmask {
         self.mask.dy()
     }
 
+    /// Check if point (x, y) is on land.
+    ///
+    /// `x` is longitude, [-180, 180] east
+    /// `y` is latitude,  [- 90,  90] north
+    ///
+    ///
+    /// Returns `true` if the point is on land or close to the shore.
     pub fn contains(&self, x: f64, y: f64) -> bool {
-        self.mask.contains(x, y) && self.shapes.contains(x, y)
+        assert!(y >= -90. && y <= 90.);
+
+        let x = modulate_longitude(x);
+
+        self.mask.contains_unchecked(x, y) && self.shapes.contains_unchecked(x, y)
     }
 
     fn contains_many(
@@ -175,6 +186,25 @@ mod tests {
         assert!(!mask.contains(5., 65.6));
 
         b.iter(|| mask.contains(5., 65.6))
+    }
+
+    #[test]
+    fn test_np() {
+        let mask = RoaringLandmask::new().unwrap();
+        assert!(!mask.contains(5., 90.));
+    }
+
+    #[test]
+    fn test_sp() {
+        let mask = RoaringLandmask::new().unwrap();
+        assert!(mask.contains(5., -89.99));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_sp_oob() {
+        let mask = RoaringLandmask::new().unwrap();
+        assert!(mask.contains(5., -90.));
     }
 
     #[test]

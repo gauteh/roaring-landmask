@@ -101,14 +101,22 @@ impl Gshhg {
 
     /// Check if point (x, y) is on land.
     ///
-    /// `x` is longitude, [-180, 180] north
-    /// `y` is latitude,  [- 90,  90] east
+    /// `x` is longitude, [-180, 180] east
+    /// `y` is latitude,  [- 90,  90] north
     ///
     /// Returns `true` if the point is on land.
     pub fn contains(&self, x: f64, y: f64) -> bool {
+        let x = super::modulate_longitude(x);
         debug_assert!(x >= -180. && x <= 180.);
-        assert!(y >= -90. && y <= 90.);
+        assert!(y > -90. && y <= 90.);
 
+        let point = CoordSeq::new_from_vec(&[&[x, y]]).unwrap();
+        let point = Geometry::create_point(point).unwrap();
+        self.prepped.contains(&point).unwrap()
+    }
+
+    /// Same as `contains`, but does not check for bounds.
+    pub(crate) fn contains_unchecked(&self, x: f64, y: f64) -> bool {
         let point = CoordSeq::new_from_vec(&[&[x, y]]).unwrap();
         let point = Geometry::create_point(point).unwrap();
         self.prepped.contains(&point).unwrap()
@@ -161,6 +169,18 @@ mod tests {
     #[test]
     fn test_load() {
         let _s = Gshhg::new().unwrap();
+    }
+
+    #[test]
+    fn test_np() {
+        let mask = Gshhg::new().unwrap();
+        assert!(!mask.contains(5., 90.));
+    }
+
+    #[test]
+    fn test_sp() {
+        let mask = Gshhg::new().unwrap();
+        assert!(mask.contains(5., -89.99));
     }
 
     #[bench]
