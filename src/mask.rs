@@ -92,7 +92,7 @@ impl RoaringMask {
         let buf: &[u8] = buf.borrow();
 
         let fd = xz2::read::XzDecoder::new(buf);
-        let tmap = RoaringTreemap::deserialize_from(fd)?;
+        let tmap = RoaringTreemap::deserialize_unchecked_from(fd)?;
 
         Ok(RoaringMask { tmap })
     }
