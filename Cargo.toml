@@ -20,20 +20,16 @@ path = "src/devel/make_bitmap.rs"
 [dependencies]
 geos = { version = "8" }
 lazy_static = "1.4.0"
-numpy = { version = "0.14", features = [ "rayon" ] }
-pyo3 = { version = "0.14" }
+numpy = { version = "0.16" }
+pyo3 = { version = "0.16" }
 roaring = "0.9.0"
-rust-embed = "5.9.0"
+rust-embed = "6"
 xz2 = "0.1.6"
 openssl = { version = "0.10" }
 ndarray = { version = "0.15.3", features = [ "rayon" ] }
 
 [dev-dependencies]
 rayon = "1"
-
-[patch.crates-io]
-geos-sys = { version = "2", git = "https://github.com/gauteh/geos-sys", branch = "static-build" }
-geos = { version = "8", git = "https://github.com/gauteh/geos", branch = "static" }
 
 [build-dependencies]
 reqwest = { version = "0.11", features = [ "blocking" ] }
@@ -43,7 +39,7 @@ path-slash = "0.1"
 [features]
 extension-module = ["pyo3/extension-module"]
 simd = [ "roaring/simd" ]
-#static = [ "geos/static" ]
+static = [ "geos/static", "openssl/vendored" ]
 default = [ ]
 
 [profile.release]

@@ -3,7 +3,7 @@ requires = ["maturin>=0.11,<0.12"]
 build-backend = "maturin"
 
 [tool.maturin]
-cargo-extra-args = "--features extension-module,geos/static,openssl/vendored"
+cargo-extra-args = "--features extension-module,static"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

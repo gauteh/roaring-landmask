@@ -89,7 +89,7 @@ impl Gshhg {
 
         let buf = GsshgData::get(&GSHHS_F)
             .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "cannot find shapes"))?;
-        let buf: &[u8] = buf.borrow();
+        let buf: &[u8] = buf.data.borrow();
         let mut fd = xz2::read::XzDecoder::new(buf);
 
         let mut buf = Vec::new();

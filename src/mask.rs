@@ -89,7 +89,7 @@ impl RoaringMask {
 
         let buf = GsshgData::get("mask.tbmap.xz")
             .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "cannot find mask"))?;
-        let buf: &[u8] = buf.borrow();
+        let buf: &[u8] = buf.data.borrow();
 
         let fd = xz2::read::XzDecoder::new(buf);
         let tmap = RoaringTreemap::deserialize_unchecked_from(fd)?;
