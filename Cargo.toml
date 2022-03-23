@@ -18,7 +18,7 @@ name = "make_bitmap"
 path = "src/devel/make_bitmap.rs"
 
 [dependencies]
-geos = { version = "8" }
+geos = { version = "8", git = "https://github.com/gauteh/geos", branch="libdir" }
 lazy_static = "1.4.0"
 numpy = { version = "0.16" }
 pyo3 = { version = "0.16" }
