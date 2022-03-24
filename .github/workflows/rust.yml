@@ -1,17 +1,14 @@
 name: Rust build and test
 on: push
 jobs:
-  build_and_test:
+  stable:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain: [ "stable", "nightly" ]
     steps:
       - uses: actions/checkout@v2
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
-            toolchain: ${{ matrix.toolchain }}
+            toolchain: stable
             override: true
             components: rustfmt, clippy
             profile: minimal
@@ -29,3 +26,29 @@ jobs:
 
       - run: cargo build --features geos/static --verbose
       - run: cargo test --features geos/static --verbose
+
+  nightly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: nightly
+            override: true
+            components: rustfmt, clippy
+            profile: minimal
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+          architecture: x64
+
+      - name: Install deps
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install build-essential libssl-dev
+          pip install numpy
+
+      - run: cargo build --features geos/static,nightly --verbose
+      - run: cargo test --features geos/static,nightly --verbose
