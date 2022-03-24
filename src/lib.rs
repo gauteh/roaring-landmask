@@ -52,7 +52,8 @@
 //! on_land = l.contains_many(xx.ravel(), yy.ravel())
 //! ```
 
-#![feature(test)]
+#![cfg_attr(feature = "nightly", feature(test))]
+#[cfg(feature = "nightly")]
 extern crate test;
 
 #[macro_use]
@@ -162,30 +163,10 @@ fn modulate_longitude(lon: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use test::Bencher;
 
     #[test]
     fn load_ms() {
         let _ms = RoaringLandmask::new().unwrap();
-    }
-
-    #[bench]
-    fn test_contains_on_land(b: &mut Bencher) {
-        let mask = RoaringLandmask::new().unwrap();
-
-        assert!(mask.contains(15., 65.6));
-        assert!(mask.contains(10., 60.0));
-
-        b.iter(|| mask.contains(15., 65.6))
-    }
-
-    #[bench]
-    fn test_contains_in_ocean(b: &mut Bencher) {
-        let mask = RoaringLandmask::new().unwrap();
-
-        assert!(!mask.contains(5., 65.6));
-
-        b.iter(|| mask.contains(5., 65.6))
     }
 
     #[test]
@@ -242,71 +223,96 @@ mod tests {
         assert!(!mask.contains(5., -95.));
     }
 
-    #[bench]
-    fn test_contains_many(b: &mut Bencher) {
-        let mask = RoaringLandmask::new().unwrap();
+    #[cfg(feature = "nightly")]
+    mod benches {
+        use super::*;
+        use test::Bencher;
 
-        let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
-            .map(|v| v as f64 * 0.5 - 180.)
-            .map(|x| {
-                (0..180 * 2)
-                    .map(|y| y as f64 * 0.5 - 90.)
-                    .map(move |y| (x, y))
+        #[bench]
+        fn test_contains_on_land(b: &mut Bencher) {
+            let mask = RoaringLandmask::new().unwrap();
+
+            assert!(mask.contains(15., 65.6));
+            assert!(mask.contains(10., 60.0));
+
+            b.iter(|| mask.contains(15., 65.6))
+        }
+
+        #[bench]
+        fn test_contains_in_ocean(b: &mut Bencher) {
+            let mask = RoaringLandmask::new().unwrap();
+
+            assert!(!mask.contains(5., 65.6));
+
+            b.iter(|| mask.contains(5., 65.6))
+        }
+
+        #[bench]
+        fn test_contains_many(b: &mut Bencher) {
+            let mask = RoaringLandmask::new().unwrap();
+
+            let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
+                .map(|v| v as f64 * 0.5 - 180.)
+                .map(|x| {
+                    (0..180 * 2)
+                        .map(|y| y as f64 * 0.5 - 90.)
+                        .map(move |y| (x, y))
+                })
+                .flatten()
+                .unzip();
+
+            pyo3::prepare_freethreaded_python();
+            pyo3::Python::with_gil(|py| {
+
+                let x = PyArray::from_vec(py, x);
+                let y = PyArray::from_vec(py, y);
+
+                println!("testing {} points..", x.len());
+
+                b.iter(|| {
+                    let len = x.len();
+
+                    let x = x.to_dyn().readonly();
+                    let y = y.to_dyn().readonly();
+
+                    let onland = mask.contains_many(py, x, y);
+                    assert!(onland.as_ref(py).len() == len);
+                })
             })
-            .flatten()
-            .unzip();
+        }
 
-        pyo3::prepare_freethreaded_python();
-        pyo3::Python::with_gil(|py| {
+        #[bench]
+        fn test_contains_many_par(b: &mut Bencher) {
+            let mask = RoaringLandmask::new().unwrap();
 
-            let x = PyArray::from_vec(py, x);
-            let y = PyArray::from_vec(py, y);
+            let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
+                .map(|v| v as f64 * 0.5 - 180.)
+                .map(|x| {
+                    (0..180 * 2)
+                        .map(|y| y as f64 * 0.5 - 90.)
+                        .map(move |y| (x, y))
+                })
+                .flatten()
+                .unzip();
 
-            println!("testing {} points..", x.len());
+            pyo3::prepare_freethreaded_python();
+            pyo3::Python::with_gil(|py| {
 
-            b.iter(|| {
-                let len = x.len();
+                let x = PyArray::from_vec(py, x);
+                let y = PyArray::from_vec(py, y);
 
-                let x = x.to_dyn().readonly();
-                let y = y.to_dyn().readonly();
+                println!("testing {} points..", x.len());
 
-                let onland = mask.contains_many(py, x, y);
-                assert!(onland.as_ref(py).len() == len);
+                b.iter(|| {
+                    let len = x.len();
+
+                    let x = x.to_dyn().readonly();
+                    let y = y.to_dyn().readonly();
+
+                    let onland = mask.contains_many_par(py, x, y);
+                    assert!(onland.as_ref(py).len() == len);
+                })
             })
-        })
-    }
-
-    #[bench]
-    fn test_contains_many_par(b: &mut Bencher) {
-        let mask = RoaringLandmask::new().unwrap();
-
-        let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
-            .map(|v| v as f64 * 0.5 - 180.)
-            .map(|x| {
-                (0..180 * 2)
-                    .map(|y| y as f64 * 0.5 - 90.)
-                    .map(move |y| (x, y))
-            })
-            .flatten()
-            .unzip();
-
-        pyo3::prepare_freethreaded_python();
-        pyo3::Python::with_gil(|py| {
-
-            let x = PyArray::from_vec(py, x);
-            let y = PyArray::from_vec(py, y);
-
-            println!("testing {} points..", x.len());
-
-            b.iter(|| {
-                let len = x.len();
-
-                let x = x.to_dyn().readonly();
-                let y = y.to_dyn().readonly();
-
-                let onland = mask.contains_many_par(py, x, y);
-                assert!(onland.as_ref(py).len() == len);
-            })
-        })
+        }
     }
 }

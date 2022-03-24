@@ -148,7 +148,9 @@ impl Gshhg {
         let y = y.as_array();
 
         use ndarray::Zip;
-        let contains = Zip::from(&x).and(&y).par_map_collect(|x, y| self.contains(*x, *y));
+        let contains = Zip::from(&x)
+            .and(&y)
+            .par_map_collect(|x, y| self.contains(*x, *y));
         PyArray::from_owned_array(py, contains).to_owned()
     }
 }
@@ -156,7 +158,6 @@ impl Gshhg {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use test::Bencher;
 
     #[test]
     fn test_load_compressed() {
@@ -183,22 +184,28 @@ mod tests {
         assert!(mask.contains(5., -89.99));
     }
 
-    #[bench]
-    fn test_contains_on_land(b: &mut Bencher) {
-        let s = Gshhg::new().unwrap();
+    #[cfg(feature = "nightly")]
+    mod benches {
+        use test::Bencher;
+        use test::*;
 
-        assert!(s.contains(15., 65.6));
-        assert!(s.contains(10., 60.0));
+        #[bench]
+        fn test_contains_on_land(b: &mut Bencher) {
+            let s = Gshhg::new().unwrap();
 
-        b.iter(|| s.contains(15., 65.6))
-    }
+            assert!(s.contains(15., 65.6));
+            assert!(s.contains(10., 60.0));
 
-    #[bench]
-    fn test_contains_in_ocean(b: &mut Bencher) {
-        let s = Gshhg::new().unwrap();
+            b.iter(|| s.contains(15., 65.6))
+        }
 
-        assert!(!s.contains(5., 65.6));
+        #[bench]
+        fn test_contains_in_ocean(b: &mut Bencher) {
+            let s = Gshhg::new().unwrap();
 
-        b.iter(|| s.contains(5., 65.6))
+            assert!(!s.contains(5., 65.6));
+
+            b.iter(|| s.contains(5., 65.6))
+        }
     }
 }

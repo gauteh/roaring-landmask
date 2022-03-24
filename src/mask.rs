@@ -181,7 +181,6 @@ impl RoaringMask {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use test::Bencher;
 
     #[test]
     fn required_size() {
@@ -205,78 +204,84 @@ mod tests {
         assert!(mask.contains(5., -90.));
     }
 
-    #[bench]
-    fn load_tmap(b: &mut Bencher) {
-        b.iter(|| {
-            let _mask = RoaringMask::new().unwrap();
-        })
-    }
+    #[cfg(feature = "nightly")]
+    mod benches {
+        use super::*;
+        use test::Bencher;
 
-    #[bench]
-    fn load_tmap_compressed(b: &mut Bencher) {
-        b.iter(|| {
-            let _mask = RoaringMask::from_compressed("gshhs/mask.tbmap.xz").unwrap();
-        })
-    }
-
-    #[bench]
-    fn test_inv_transform(be: &mut Bencher) {
-        // let a = Affine::make();
-        let a = &TRANSFORM;
-
-        let b = a.apply(40.5, 87.);
-        println!("{:?}", b);
-        assert_eq!(b.0, 52920.5);
-        assert_eq!(b.1, 42480.5);
-
-        let c = a.apply(0., 30.);
-        assert_eq!(c.0, 43200.5);
-        assert_eq!(c.1, 28800.5);
-
-        be.iter(|| a.apply(40.5, 87.))
-    }
-
-    #[bench]
-    fn test_contains_on_land(b: &mut Bencher) {
-        let mask = RoaringMask::new().unwrap();
-
-        assert!(mask.contains(15., 65.6));
-        assert!(mask.contains(10., 60.0));
-
-        b.iter(|| mask.contains(15., 65.6))
-    }
-
-    #[bench]
-    fn test_contains_in_ocean(b: &mut Bencher) {
-        let mask = RoaringMask::new().unwrap();
-
-        assert!(!mask.contains(5., 65.6));
-
-        b.iter(|| mask.contains(5., 65.6))
-    }
-
-    #[bench]
-    fn test_contains_many(b: &mut Bencher) {
-        let mask = RoaringMask::new().unwrap();
-
-        let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
-            .map(|v| v as f64 * 0.5 - 180.)
-            .map(|x| {
-                (0..180 * 2)
-                    .map(|y| y as f64 * 0.5 - 90.)
-                    .map(move |y| (x, y))
+        #[bench]
+        fn load_tmap(b: &mut Bencher) {
+            b.iter(|| {
+                let _mask = RoaringMask::new().unwrap();
             })
-            .flatten()
-            .unzip();
+        }
 
-        println!("testing {} points..", x.len());
+        #[bench]
+        fn load_tmap_compressed(b: &mut Bencher) {
+            b.iter(|| {
+                let _mask = RoaringMask::from_compressed("gshhs/mask.tbmap.xz").unwrap();
+            })
+        }
 
-        b.iter(|| {
-            let _onland = x
-                .iter()
-                .zip(y.iter())
-                .map(|(x, y)| mask.contains(*x, *y))
-                .collect::<Vec<bool>>();
-        })
+        #[bench]
+        fn test_inv_transform(be: &mut Bencher) {
+            // let a = Affine::make();
+            let a = &TRANSFORM;
+
+            let b = a.apply(40.5, 87.);
+            println!("{:?}", b);
+            assert_eq!(b.0, 52920.5);
+            assert_eq!(b.1, 42480.5);
+
+            let c = a.apply(0., 30.);
+            assert_eq!(c.0, 43200.5);
+            assert_eq!(c.1, 28800.5);
+
+            be.iter(|| a.apply(40.5, 87.))
+        }
+
+        #[bench]
+        fn test_contains_on_land(b: &mut Bencher) {
+            let mask = RoaringMask::new().unwrap();
+
+            assert!(mask.contains(15., 65.6));
+            assert!(mask.contains(10., 60.0));
+
+            b.iter(|| mask.contains(15., 65.6))
+        }
+
+        #[bench]
+        fn test_contains_in_ocean(b: &mut Bencher) {
+            let mask = RoaringMask::new().unwrap();
+
+            assert!(!mask.contains(5., 65.6));
+
+            b.iter(|| mask.contains(5., 65.6))
+        }
+
+        #[bench]
+        fn test_contains_many(b: &mut Bencher) {
+            let mask = RoaringMask::new().unwrap();
+
+            let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
+                .map(|v| v as f64 * 0.5 - 180.)
+                .map(|x| {
+                    (0..180 * 2)
+                        .map(|y| y as f64 * 0.5 - 90.)
+                        .map(move |y| (x, y))
+                })
+                .flatten()
+                .unzip();
+
+            println!("testing {} points..", x.len());
+
+            b.iter(|| {
+                let _onland = x
+                    .iter()
+                    .zip(y.iter())
+                    .map(|(x, y)| mask.contains(*x, *y))
+                    .collect::<Vec<bool>>();
+            })
+        }
     }
 }

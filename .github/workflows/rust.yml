@@ -3,12 +3,15 @@ on: push
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain: [ "stable", "nightly" ]
     steps:
       - uses: actions/checkout@v2
-      - name: Install latest nightly
+      - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
-            toolchain: nightly
+            toolchain: ${{ matrix.toolchain }}
             override: true
             components: rustfmt, clippy
             profile: minimal

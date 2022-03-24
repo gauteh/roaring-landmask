@@ -40,7 +40,8 @@ path-slash = "0.1"
 extension-module = ["pyo3/extension-module"]
 simd = [ "roaring/simd" ]
 static = [ "geos/static", "openssl/vendored" ]
-default = [ ]
+nightly = []
+default = []
 
 [profile.release]
 debug = true
