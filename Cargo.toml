@@ -21,7 +21,7 @@ path = "src/devel/make_bitmap.rs"
 geos = { version = "8" }
 lazy_static = "1.4.0"
 numpy = { version = "0.16" }
-pyo3 = { version = "0.16" }
+pyo3 = { version = "0.16" , features = [ "abi3-py37" ] }
 roaring = "0.9.0"
 rust-embed = "6"
 xz2 = "0.1.6"
