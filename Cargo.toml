@@ -25,7 +25,6 @@ pyo3 = { version = "0.16" , features = [ "abi3-py37" ] }
 roaring = "0.9.0"
 rust-embed = "6"
 xz2 = "0.1.6"
-openssl = { version = "0.10" }
 ndarray = { version = "0.15.3", features = [ "rayon" ] }
 
 [dev-dependencies]
@@ -39,7 +38,7 @@ path-slash = "0.1"
 [features]
 extension-module = ["pyo3/extension-module"]
 simd = [ "roaring/simd" ]
-static = [ "geos/static", "openssl/vendored" ]
+static = [ "geos/static" ]
 nightly = []
 default = []
 
