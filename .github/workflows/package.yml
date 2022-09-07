@@ -36,7 +36,7 @@ jobs:
       - name: Build wheels - universal2
         uses: messense/maturin-action@v1
         with:
-          args: --release --universal2 --out dist --no-sdist
+          args: --release --universal2 --out dist
       - name: Install built wheel - universal2
         run: |
           pip install roaring-landmask --no-index --find-links dist --force-reinstall
@@ -68,7 +68,7 @@ jobs:
         uses: messense/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist --no-sdist
+          args: --release --out dist
       - name: Install built wheel
         run: |
           pip install roaring-landmask --no-index --find-links dist --force-reinstall
@@ -97,7 +97,7 @@ jobs:
         rust-toolchain: stable
         target: ${{ matrix.target }}
         manylinux: auto
-        args: --release --out dist --no-sdist
+        args: --release --out dist
     - name: Install built wheel
       if: matrix.target == 'x86_64'
       run: |
