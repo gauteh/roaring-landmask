@@ -36,7 +36,7 @@ jobs:
       - name: Build wheels - universal2
         uses: messense/maturin-action@v1
         with:
-          args: --release --universal2 --out dist
+          args: --release --universal2 --out dist --sdist
       - name: Install built wheel - universal2
         run: |
           pip install roaring-landmask --no-index --find-links dist --force-reinstall
