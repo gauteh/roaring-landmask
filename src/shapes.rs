@@ -187,7 +187,7 @@ mod tests {
     #[cfg(feature = "nightly")]
     mod benches {
         use test::Bencher;
-        use test::*;
+        use super::*;
 
         #[bench]
         fn test_contains_on_land(b: &mut Bencher) {
