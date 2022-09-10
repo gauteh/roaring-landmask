@@ -11,6 +11,12 @@ def test_landmask_onland(benchmark):
     c = benchmark(l.contains, onland[0], onland[1])
     assert c
 
+def test_landmask_onland_single():
+    l = RoaringLandmask.new()
+
+    c = l.contains(15., 65.6)
+    assert c
+
 def test_landmask_many(benchmark):
   l = RoaringLandmask.new()
 

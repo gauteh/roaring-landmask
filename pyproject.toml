@@ -3,7 +3,7 @@ requires = ["maturin>=0.13,<0.14"]
 build-backend = "maturin"
 
 [tool.maturin]
-cargo-extra-args = "--features extension-module,static"
+features = [ "extension-module" , "static" ]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -14,7 +14,6 @@ testpaths = [
 markers = [
   "slow:mark tests as slow"
 ]
-
 
 [tool.pylint.master]
 extension-pkg-whitelist="netCDF4,numpy,scipy,roaring_landmask"
