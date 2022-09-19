@@ -92,9 +92,9 @@ pub struct RoaringLandmask {
 #[pymethods]
 impl RoaringLandmask {
     #[staticmethod]
-    pub fn new() -> io::Result<RoaringLandmask> {
+    pub fn new(py: Python) -> io::Result<RoaringLandmask> {
         let mask = RoaringMask::new()?;
-        let shapes = Gshhg::new()?;
+        let shapes = Gshhg::new(py)?;
 
         Ok(RoaringLandmask { mask, shapes })
     }

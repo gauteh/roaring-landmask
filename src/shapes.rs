@@ -1,4 +1,4 @@
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::PyBytes};
 use std::borrow::Borrow;
 use std::fs::File;
 use std::io::{self, prelude::*};
@@ -82,9 +82,17 @@ impl Gshhg {
 
 #[pymethods]
 impl Gshhg {
-    #[staticmethod]
     /// Make a new Gshhg shapes instance.
-    pub fn new() -> io::Result<Self> {
+    #[staticmethod]
+    pub fn new(py: Python) -> io::Result<Self> {
+        let buf = Gshhg::wkb(py)?;
+        let g = geos::Geometry::new_from_wkb(buf.as_bytes()).unwrap();
+        Gshhg::from_geom(g)
+    }
+
+    /// Get the WKB for the GSHHG shapes (full resolution).
+    #[staticmethod]
+    pub fn wkb(py: Python) -> io::Result<&PyBytes> {
         use crate::GsshgData;
 
         let buf = GsshgData::get(&GSHHS_F)
@@ -95,8 +103,7 @@ impl Gshhg {
         let mut buf = Vec::new();
         fd.read_to_end(&mut buf)?;
 
-        let g = geos::Geometry::new_from_wkb(&buf).unwrap();
-        Gshhg::from_geom(g)
+        Ok(PyBytes::new(py, &buf))
     }
 
     /// Check if point (x, y) is on land.
