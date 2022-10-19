@@ -117,7 +117,7 @@ impl Gshhg {
         debug_assert!(x >= -180. && x <= 180.);
         assert!(y > -90. && y <= 90.);
 
-        let point = CoordSeq::new_from_vec(&[&[x, y]]).unwrap();
+        let point = CoordSeq::new_from_vec(&[&[x as f64, y as f64]]).unwrap();
         let point = Geometry::create_point(point).unwrap();
         self.prepped.contains(&point).unwrap()
     }
@@ -176,25 +176,32 @@ mod tests {
 
     #[test]
     fn test_load() {
-        let _s = Gshhg::new().unwrap();
+        pyo3::prepare_freethreaded_python();
+        Python::with_gil(|py| Gshhg::new(py)).unwrap();
     }
 
     #[test]
     fn test_np() {
-        let mask = Gshhg::new().unwrap();
-        assert!(!mask.contains(5., 90.));
+        pyo3::prepare_freethreaded_python();
+        Python::with_gil(|py| {
+            let mask = Gshhg::new(py).unwrap();
+            assert!(!mask.contains(5., 90.));
+        })
     }
 
     #[test]
     fn test_sp() {
-        let mask = Gshhg::new().unwrap();
-        assert!(mask.contains(5., -89.99));
+        pyo3::prepare_freethreaded_python();
+        Python::with_gil(|py| {
+            let mask = Gshhg::new(py).unwrap();
+            assert!(mask.contains(5., -89.99));
+        })
     }
 
     #[cfg(feature = "nightly")]
     mod benches {
-        use test::Bencher;
         use super::*;
+        use test::Bencher;
 
         #[bench]
         fn test_contains_on_land(b: &mut Bencher) {
