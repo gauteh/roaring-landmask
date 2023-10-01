@@ -218,7 +218,7 @@ mod tests {
         #[bench]
         fn test_contains_in_ocean(b: &mut Bencher) {
             Python::with_gil(|py| {
-                let s = Gshhg::new().unwrap();
+                let s = Gshhg::new(py).unwrap();
 
                 assert!(!s.contains(5., 65.6));
 
