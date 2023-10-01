@@ -205,6 +205,7 @@ mod tests {
 
         #[bench]
         fn test_contains_on_land(b: &mut Bencher) {
+            pyo3::prepare_freethreaded_python();
             Python::with_gil(|py| {
                 let s = Gshhg::new(py).unwrap();
 
@@ -217,6 +218,7 @@ mod tests {
 
         #[bench]
         fn test_contains_in_ocean(b: &mut Bencher) {
+            pyo3::prepare_freethreaded_python();
             Python::with_gil(|py| {
                 let s = Gshhg::new(py).unwrap();
 
