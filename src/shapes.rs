@@ -138,7 +138,7 @@ impl Gshhg {
         let x = x.as_array();
         let y = y.as_array();
 
-        PyArray::from_exact_iter(
+        PyArray::from_iter(
             py,
             x.iter().zip(y.iter()).map(|(x, y)| self.contains(*x, *y)),
         )

@@ -2,7 +2,7 @@
 authors = ["Gaute Hope <eg@gaute.vetsj.com>"]
 description = "A fast and limited-memory structure with a landmask based on GSHHG for determing whether a point on Earth is on land or in the ocean"
 name = "roaring-landmask"
-version = "0.7.1"
+version = "0.7.2"
 edition = "2018"
 license = "MIT"
 homepage = "https://github.com/gauteh/roaring-landmask"
@@ -19,11 +19,11 @@ path = "src/devel/make_bitmap.rs"
 
 [dependencies]
 geos = { version = "8" }
-lazy_static = "1.4.0"
-numpy = { version = "0.17" }
-pyo3 = { version = "0.17" , features = [ "abi3-py37" ] }
+lazy_static = "1.4"
+numpy = { version = "0.19" }
+pyo3 = { version = "0.19" , features = [ "abi3-py38" ] }
 roaring = "0.10"
-rust-embed = "6"
+rust-embed = "8"
 xz2 = "0.1"
 ndarray = { version = "0.15", features = [ "rayon" ] }
 
