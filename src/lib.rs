@@ -297,11 +297,11 @@ mod tests {
 
                 let mask = RoaringLandmask::new(py).unwrap();
 
-                let (x, y): (Vec<f32>, Vec<f32>) = (0..360 * 2)
-                    .map(|v| v as f32 * 0.5 - 180.)
+                let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
+                    .map(|v| v as f64 * 0.5 - 180.)
                     .map(|x| {
                         (0..180 * 2)
-                            .map(|y| y as f32 * 0.5 - 90.)
+                            .map(|y| y as f64 * 0.5 - 90.)
                             .map(move |y| (x, y))
                     })
                     .flatten()
@@ -342,11 +342,11 @@ mod tests {
 
                 let mask = RoaringLandmask::new(py).unwrap();
 
-                let (x, y): (Vec<f32>, Vec<f32>) = (0..360 * 2)
-                    .map(|v| v as f32 * 0.5 - 180.)
+                let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
+                    .map(|v| v as f64 * 0.5 - 180.)
                     .map(|x| {
                         (0..180 * 2)
-                            .map(|y| y as f32 * 0.5 - 90.)
+                            .map(|y| y as f64 * 0.5 - 90.)
                             .map(move |y| (x, y))
                     })
                     .flatten()

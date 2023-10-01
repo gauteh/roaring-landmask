@@ -205,21 +205,25 @@ mod tests {
 
         #[bench]
         fn test_contains_on_land(b: &mut Bencher) {
-            let s = Gshhg::new().unwrap();
+            Python::with_gil(|py| {
+                let s = Gshhg::new(py).unwrap();
 
-            assert!(s.contains(15., 65.6));
-            assert!(s.contains(10., 60.0));
+                assert!(s.contains(15., 65.6));
+                assert!(s.contains(10., 60.0));
 
-            b.iter(|| s.contains(15., 65.6))
+                b.iter(|| s.contains(15., 65.6))
+            })
         }
 
         #[bench]
         fn test_contains_in_ocean(b: &mut Bencher) {
-            let s = Gshhg::new().unwrap();
+            Python::with_gil(|py| {
+                let s = Gshhg::new().unwrap();
 
-            assert!(!s.contains(5., 65.6));
+                assert!(!s.contains(5., 65.6));
 
-            b.iter(|| s.contains(5., 65.6))
+                b.iter(|| s.contains(5., 65.6))
+            })
         }
     }
 }
