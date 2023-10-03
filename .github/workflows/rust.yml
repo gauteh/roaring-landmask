@@ -8,6 +8,7 @@ jobs:
         platform:
           - ubuntu-latest
           - windows-latest
+          - macos-latest
     steps:
       - uses: actions/checkout@v2
       - name: Install toolchain
@@ -25,8 +26,6 @@ jobs:
 
       - name: Install deps
         run: |
-          # sudo apt-get -y update
-          # sudo apt-get -y install build-essential libssl-dev
           pip install numpy
 
       - run: cargo build --features geos/static --verbose
