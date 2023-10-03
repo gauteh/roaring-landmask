@@ -38,7 +38,7 @@ path-slash = "0.1"
 [features]
 extension-module = ["pyo3/extension-module"]
 simd = [ "roaring/simd" ]
-static = [ "geos/static" ]
+static = [ "geos/static", "geos/v3_11_0" ]
 nightly = []
 default = []
 
