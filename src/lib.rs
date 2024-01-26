@@ -62,6 +62,10 @@ extern crate test;
 #[macro_use]
 extern crate lazy_static;
 
+// geos-sys needs libc++, probably libstdc++. On Windows Conda builds this hopefully adds the
+// correct flags to the linker.
+extern crate link_cplusplus;
+
 use numpy::{PyArray, PyReadonlyArrayDyn};
 use pyo3::prelude::*;
 use std::io;
