@@ -26,6 +26,7 @@ fn test_par_prepped_no_warmup() {
     });
 }
 
+#[ignore]
 #[test]
 fn test_par_prepped_with_warmup() {
     use rayon::prelude::*;

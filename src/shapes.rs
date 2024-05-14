@@ -11,21 +11,20 @@ pub static GSHHS_F: &str = "gshhs_f_-180.000000E-90.000000N180.000000E90.000000N
 
 #[pyclass]
 pub struct Gshhg {
-    geom: *mut Geometry,
-
     // prepped requires `geom` above to be around, and is valid as long as geom is alive.
+    geom: Geometry,
     prepped: PreparedGeometry,
 }
 
-impl Drop for Gshhg {
-    fn drop(&mut self) {
-        unsafe { drop(Box::from_raw(self.geom)) }
-    }
-}
+// impl Drop for Gshhg {
+//     fn drop(&mut self) {
+//         unsafe { drop(Box::from_raw(self.geom)) }
+//     }
+// }
 
 // PreparedGeometry is Send+Sync, Geometry is Send+Sync. *mut Geometry is never modified.
-unsafe impl Send for Gshhg {}
-unsafe impl Sync for Gshhg {}
+// unsafe impl Send for Gshhg {}
+// unsafe impl Sync for Gshhg {}
 
 // `PreparededGeometry::contains` needs a call to `contains` before it is thread-safe:
 // https://github.com/georust/geos/issues/95
@@ -37,13 +36,12 @@ fn warmup_prepped(prepped: &PreparedGeometry) {
 
 impl Clone for Gshhg {
     fn clone(&self) -> Self {
-        let gptr = self.geom.clone();
-        debug_assert!(gptr != self.geom);
-        let prepped = unsafe { (&*gptr).to_prepared_geom().unwrap() };
+        let geom = Clone::clone(&self.geom);
+        let prepped = geom.to_prepared_geom().unwrap();
         warmup_prepped(&prepped);
 
         Gshhg {
-            geom: gptr,
+            geom,
             prepped,
         }
     }
@@ -51,14 +49,15 @@ impl Clone for Gshhg {
 
 impl Gshhg {
     pub fn from_geom(geom: Geometry) -> io::Result<Gshhg> {
-        let bxd = Box::new(geom);
-        let gptr = Box::into_raw(bxd);
-        let prepped = unsafe { (&*gptr).to_prepared_geom() }
-            .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "cannot prepare geomtry"))?;
+        // let bxd = Box::new(geom);
+        // let gptr = Box::into_raw(bxd);
+        // let prepped = unsafe { (&*gptr).to_prepared_geom() }
+        //     .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "cannot prepare geomtry"))?;
+        let prepped = geom.to_prepared_geom().map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "cannot prepare geomtry"))?;
         warmup_prepped(&prepped);
 
         Ok(Gshhg {
-            geom: gptr,
+            geom,
             prepped,
         })
     }
