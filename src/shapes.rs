@@ -11,10 +11,10 @@ pub static GSHHS_F: &str = "gshhs_f_-180.000000E-90.000000N180.000000E90.000000N
 
 #[pyclass]
 pub struct Gshhg {
-    geom: *mut Geometry<'static>,
+    geom: *mut Geometry,
 
     // prepped requires `geom` above to be around, and is valid as long as geom is alive.
-    prepped: PreparedGeometry<'static>,
+    prepped: PreparedGeometry,
 }
 
 impl Drop for Gshhg {
@@ -29,7 +29,7 @@ unsafe impl Sync for Gshhg {}
 
 // `PreparededGeometry::contains` needs a call to `contains` before it is thread-safe:
 // https://github.com/georust/geos/issues/95
-fn warmup_prepped(prepped: &PreparedGeometry<'_>) {
+fn warmup_prepped(prepped: &PreparedGeometry) {
     let point = CoordSeq::new_from_vec(&[&[0.0, 0.0]]).unwrap();
     let point = Geometry::create_point(point).unwrap();
     prepped.contains(&point).unwrap();
@@ -50,7 +50,7 @@ impl Clone for Gshhg {
 }
 
 impl Gshhg {
-    pub fn from_geom(geom: Geometry<'static>) -> io::Result<Gshhg> {
+    pub fn from_geom(geom: Geometry) -> io::Result<Gshhg> {
         let bxd = Box::new(geom);
         let gptr = Box::into_raw(bxd);
         let prepped = unsafe { (&*gptr).to_prepared_geom() }
@@ -69,7 +69,7 @@ impl Gshhg {
         Gshhg::from_geom(g)
     }
 
-    pub fn get_geometry_from_compressed<P: AsRef<Path>>(path: P) -> io::Result<Geometry<'static>> {
+    pub fn get_geometry_from_compressed<P: AsRef<Path>>(path: P) -> io::Result<Geometry> {
         let fd = File::open(path)?;
         let fd = io::BufReader::new(fd);
         let mut fd = xz2::bufread::XzDecoder::new(fd);
