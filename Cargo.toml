@@ -18,7 +18,7 @@ name = "make_bitmap"
 path = "src/devel/make_bitmap.rs"
 
 [dependencies]
-geos = { version = "9" }
+geo = "0.28"
 lazy_static = "1.4"
 numpy = { version = "0.21" }
 pyo3 = { version = "0.21" , features = [ "abi3-py310" ] }
@@ -26,6 +26,7 @@ roaring = "0.10"
 rust-embed = "8"
 xz2 = "0.1"
 ndarray = { version = "0.15", features = [ "rayon" ] }
+shapefile = { version = "0.6.0", features = ["geo-types"] }
 
 [dev-dependencies]
 rayon = "1"
@@ -38,7 +39,6 @@ path-slash = "0.2"
 [features]
 extension-module = ["pyo3/extension-module"]
 simd = [ "roaring/simd" ]
-static = [ "geos/static", "geos/v3_11_0" ]
 nightly = []
 default = [ "simd" ]
 

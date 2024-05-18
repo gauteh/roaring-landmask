@@ -1,65 +1,24 @@
 use pyo3::{prelude::*, types::PyBytes};
 use std::borrow::Borrow;
 use std::fs::File;
-use std::io::{self, prelude::*};
+use std::io::{self, prelude::*, Cursor};
 use std::path::Path;
 
-use geos::{CoordSeq, Geom, Geometry, PreparedGeometry};
+use geo::{Geometry, Contains, point};
 use numpy::{PyArray, PyReadonlyArrayDyn};
 
 pub static GSHHS_F: &str = "gshhs_f_-180.000000E-90.000000N180.000000E90.000000N.wkb.xz";
 
 #[pyclass]
+#[derive(Clone)]
 pub struct Gshhg {
-    geom: *mut Geometry,
-
-    // prepped requires `geom` above to be around, and is valid as long as geom is alive.
-    prepped: PreparedGeometry,
-}
-
-impl Drop for Gshhg {
-    fn drop(&mut self) {
-        unsafe { drop(Box::from_raw(self.geom)) }
-    }
-}
-
-// PreparedGeometry is Send+Sync, Geometry is Send+Sync. *mut Geometry is never modified.
-unsafe impl Send for Gshhg {}
-unsafe impl Sync for Gshhg {}
-
-// `PreparededGeometry::contains` needs a call to `contains` before it is thread-safe:
-// https://github.com/georust/geos/issues/95
-fn warmup_prepped(prepped: &PreparedGeometry) {
-    let point = CoordSeq::new_from_vec(&[&[0.0, 0.0]]).unwrap();
-    let point = Geometry::create_point(point).unwrap();
-    prepped.contains(&point).unwrap();
-}
-
-impl Clone for Gshhg {
-    fn clone(&self) -> Self {
-        let gptr = self.geom.clone();
-        debug_assert!(gptr != self.geom);
-        let prepped = unsafe { (&*gptr).to_prepared_geom().unwrap() };
-        warmup_prepped(&prepped);
-
-        Gshhg {
-            geom: gptr,
-            prepped,
-        }
-    }
+    geom: Geometry,
 }
 
 impl Gshhg {
     pub fn from_geom(geom: Geometry) -> io::Result<Gshhg> {
-        let bxd = Box::new(geom);
-        let gptr = Box::into_raw(bxd);
-        let prepped = unsafe { (&*gptr).to_prepared_geom() }
-            .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "cannot prepare geomtry"))?;
-        warmup_prepped(&prepped);
-
         Ok(Gshhg {
-            geom: gptr,
-            prepped,
+            geom
         })
     }
 
@@ -75,8 +34,9 @@ impl Gshhg {
         let mut fd = xz2::bufread::XzDecoder::new(fd);
         let mut buf = Vec::new();
         fd.read_to_end(&mut buf)?;
-
-        Ok(geos::Geometry::new_from_wkb(&buf).unwrap())
+        let mut buf = Cursor::new(buf);
+        let shape = shapefile::ShapeReader::new(buf).unwrap();
+        shape.read_as()
     }
 }
 
@@ -85,8 +45,7 @@ impl Gshhg {
     /// Make a new Gshhg shapes instance.
     #[staticmethod]
     pub fn new(py: Python) -> io::Result<Self> {
-        let buf = Gshhg::wkb(py)?;
-        let g = geos::Geometry::new_from_wkb(buf.as_bytes()).unwrap();
+        let g = Gshhg::get_geometry_from_compressed(&GSHHS_F)?;
         Gshhg::from_geom(g)
     }
 
@@ -117,16 +76,14 @@ impl Gshhg {
         debug_assert!(x >= -180. && x <= 180.);
         assert!(y > -90. && y <= 90.);
 
-        let point = CoordSeq::new_from_vec(&[&[x as f64, y as f64]]).unwrap();
-        let point = Geometry::create_point(point).unwrap();
-        self.prepped.contains(&point).unwrap()
+        let p = point!(x: x, y: y);
+        self.geom.contains(&p)
     }
 
     /// Same as `contains`, but does not check for bounds.
     pub(crate) fn contains_unchecked(&self, x: f64, y: f64) -> bool {
-        let point = CoordSeq::new_from_vec(&[&[x, y]]).unwrap();
-        let point = Geometry::create_point(point).unwrap();
-        self.prepped.contains(&point).unwrap()
+        let p = point!(x: x, y: y);
+        self.geom.contains(&p)
     }
 
     pub fn contains_many(
