@@ -39,7 +39,7 @@ path-slash = "0.2"
 [features]
 extension-module = ["pyo3/extension-module"]
 simd = [ "roaring/simd" ]
-nightly = [ "simd" ]
+nightly = [ ]
 default = [ ]
 
 [profile.release]
