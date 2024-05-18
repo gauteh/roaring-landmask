@@ -1,10 +1,11 @@
 use pyo3::{prelude::*, types::PyBytes};
 use std::borrow::Borrow;
+use std::convert::TryFrom;
 use std::fs::File;
 use std::io::{self, prelude::*, Cursor};
 use std::path::Path;
 
-use geo::{Geometry, Contains, point};
+use geo::{point, Contains, Geometry};
 use numpy::{PyArray, PyReadonlyArrayDyn};
 
 pub static GSHHS_F: &str = "gshhs_f_-180.000000E-90.000000N180.000000E90.000000N.wkb.xz";
@@ -17,9 +18,7 @@ pub struct Gshhg {
 
 impl Gshhg {
     pub fn from_geom(geom: Geometry) -> io::Result<Gshhg> {
-        Ok(Gshhg {
-            geom
-        })
+        Ok(Gshhg { geom })
     }
 
     pub fn from_compressed<P: AsRef<Path>>(path: P) -> io::Result<Gshhg> {
@@ -32,11 +31,8 @@ impl Gshhg {
         let fd = File::open(path)?;
         let fd = io::BufReader::new(fd);
         let mut fd = xz2::bufread::XzDecoder::new(fd);
-        let mut buf = Vec::new();
-        fd.read_to_end(&mut buf)?;
-        let mut buf = Cursor::new(buf);
-        let shape = shapefile::ShapeReader::new(buf).unwrap();
-        shape.read_as()
+        let geom = wkb::wkb_to_geom(&mut fd).unwrap();
+        Ok(geom)
     }
 }
 
@@ -45,8 +41,14 @@ impl Gshhg {
     /// Make a new Gshhg shapes instance.
     #[staticmethod]
     pub fn new(py: Python) -> io::Result<Self> {
-        let g = Gshhg::get_geometry_from_compressed(&GSHHS_F)?;
-        Gshhg::from_geom(g)
+        use crate::GsshgData;
+
+        let buf = GsshgData::get(&GSHHS_F)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "cannot find shapes"))?;
+        let buf: &[u8] = buf.data.borrow();
+        let mut fd = xz2::read::XzDecoder::new(buf);
+        let geom = wkb::wkb_to_geom(&mut fd).unwrap();
+        Gshhg::from_geom(geom)
     }
 
     /// Get the WKB for the GSHHG shapes (full resolution).

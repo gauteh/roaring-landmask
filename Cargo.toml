@@ -26,7 +26,7 @@ roaring = "0.10"
 rust-embed = "8"
 xz2 = "0.1"
 ndarray = { version = "0.15", features = [ "rayon" ] }
-shapefile = { version = "0.6.0", features = ["geo-types"] }
+wkb = "0.7.1"
 
 [dev-dependencies]
 rayon = "1"
