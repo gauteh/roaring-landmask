@@ -35,6 +35,11 @@ jobs:
           args: --release --out dist
           sccache: 'true'
           manylinux: auto
+      - name: Install and test
+        run: |
+          pip install roaring-landmask --no-index --find-links dist --force-reinstall
+          pip install pytest pytest-benchmark numpy shapely
+          cd tests && pytest
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
@@ -58,6 +63,11 @@ jobs:
           target: ${{ matrix.target }}
           args: --release --out dist
           sccache: 'true'
+      - name: Install and test
+        run: |
+          pip install roaring-landmask --no-index --find-links dist --force-reinstall
+          pip install pytest pytest-benchmark numpy shapely
+          cd tests && pytest
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
@@ -80,6 +90,11 @@ jobs:
           target: ${{ matrix.target }}
           args: --release --out dist
           sccache: 'true'
+      - name: Install and test
+        run: |
+          pip install roaring-landmask --no-index --find-links dist --force-reinstall
+          pip install pytest pytest-benchmark numpy shapely
+          cd tests && pytest
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
