@@ -3,7 +3,7 @@ requires = ["maturin>=1.4"]
 build-backend = "maturin"
 
 [tool.maturin]
-features = [ "extension-module" , "static" ]
+features = [ "extension-module" ]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

@@ -1,8 +1,7 @@
 use pyo3::{prelude::*, types::PyBytes};
 use std::borrow::Borrow;
-use std::convert::TryFrom;
 use std::fs::File;
-use std::io::{self, prelude::*, Cursor};
+use std::io::{self, prelude::*};
 use std::path::Path;
 
 use geo::{point, Contains, Geometry};
@@ -97,11 +96,11 @@ impl Gshhg {
         let x = x.as_array();
         let y = y.as_array();
 
-        PyArray::from_iter(
+        PyArray::from_iter_bound(
             py,
             x.iter().zip(y.iter()).map(|(x, y)| self.contains(*x, *y)),
         )
-        .to_owned()
+        .to_owned().into()
     }
 
     pub fn contains_many_par(
