@@ -174,7 +174,9 @@ impl RoaringMask {
         let contains = Zip::from(&x)
             .and(&y)
             .par_map_collect(|x, y| self.contains(*x, *y));
-        PyArray::from_owned_array(py, contains).to_owned()
+        PyArray::from_owned_array_bound(py, contains)
+            .unbind()
+            .into()
     }
 }
 

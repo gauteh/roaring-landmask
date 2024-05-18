@@ -1,7 +1,7 @@
-use pyo3::{prelude::*, types::PyBytes};
+use pyo3::prelude::*;
 use std::borrow::Borrow;
 use std::fs::File;
-use std::io::{self, prelude::*};
+use std::io;
 use std::path::Path;
 
 use geo::{point, Contains, Geometry};
@@ -39,7 +39,7 @@ impl Gshhg {
 impl Gshhg {
     /// Make a new Gshhg shapes instance.
     #[staticmethod]
-    pub fn new(py: Python) -> io::Result<Self> {
+    pub fn new(_py: Python) -> io::Result<Self> {
         use crate::GsshgData;
 
         let buf = GsshgData::get(&GSHHS_F)
@@ -48,22 +48,6 @@ impl Gshhg {
         let mut fd = xz2::read::XzDecoder::new(buf);
         let geom = wkb::wkb_to_geom(&mut fd).unwrap();
         Gshhg::from_geom(geom)
-    }
-
-    /// Get the WKB for the GSHHG shapes (full resolution).
-    #[staticmethod]
-    pub fn wkb(py: Python) -> io::Result<&PyBytes> {
-        use crate::GsshgData;
-
-        let buf = GsshgData::get(&GSHHS_F)
-            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "cannot find shapes"))?;
-        let buf: &[u8] = buf.data.borrow();
-        let mut fd = xz2::read::XzDecoder::new(buf);
-
-        let mut buf = Vec::new();
-        fd.read_to_end(&mut buf)?;
-
-        Ok(PyBytes::new(py, &buf))
     }
 
     /// Check if point (x, y) is on land.
@@ -100,7 +84,8 @@ impl Gshhg {
             py,
             x.iter().zip(y.iter()).map(|(x, y)| self.contains(*x, *y)),
         )
-        .to_owned().into()
+        .to_owned()
+        .into()
     }
 
     pub fn contains_many_par(
@@ -116,7 +101,9 @@ impl Gshhg {
         let contains = Zip::from(&x)
             .and(&y)
             .par_map_collect(|x, y| self.contains(*x, *y));
-        PyArray::from_owned_array(py, contains).to_owned()
+        PyArray::from_owned_array_bound(py, contains)
+            .unbind()
+            .into()
     }
 }
 
