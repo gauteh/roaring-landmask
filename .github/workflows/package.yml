@@ -36,6 +36,7 @@ jobs:
       - name: Build wheels - universal2
         uses: messense/maturin-action@v1
         with:
+          target: ${{ matrix.target }}
           args: --release --universal2 --out dist --sdist
       - name: Install built wheel - universal2
         run: |
