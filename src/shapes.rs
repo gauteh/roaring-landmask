@@ -1,10 +1,11 @@
 use pyo3::prelude::*;
-use std::borrow::Borrow;
+use std::{borrow::Borrow, convert::TryInto};
 use std::fs::File;
 use std::io;
 use std::path::Path;
 
-use geo::{point, Contains, Geometry};
+use geo::{point, Contains, Geometry, Polygon, MultiPolygon};
+use rstar::RTree;
 use numpy::{PyArray, PyReadonlyArrayDyn};
 
 pub static GSHHS_F: &str = "gshhs_f_-180.000000E-90.000000N180.000000E90.000000N.wkb.xz";
@@ -12,11 +13,15 @@ pub static GSHHS_F: &str = "gshhs_f_-180.000000E-90.000000N180.000000E90.000000N
 #[pyclass]
 #[derive(Clone)]
 pub struct Gshhg {
-    geom: Geometry,
+    geom: RTree<Polygon>,
 }
 
 impl Gshhg {
     pub fn from_geom(geom: Geometry) -> io::Result<Gshhg> {
+        let geom: MultiPolygon = geom.try_into().unwrap();
+        assert!(geom.0.len() > 10);
+
+        let geom = RTree::bulk_load(geom.0);
         Ok(Gshhg { geom })
     }
 
@@ -60,15 +65,16 @@ impl Gshhg {
         let x = super::modulate_longitude(x);
         debug_assert!(x >= -180. && x <= 180.);
         assert!(y > -90. && y <= 90.);
-
-        let p = point!(x: x, y: y);
-        self.geom.contains(&p)
+        self.contains_unchecked(x, y)
     }
 
     /// Same as `contains`, but does not check for bounds.
     pub(crate) fn contains_unchecked(&self, x: f64, y: f64) -> bool {
         let p = point!(x: x, y: y);
-        self.geom.contains(&p)
+        // let po = self.geom.nearest_neighbor(&p);
+        // true
+        self.geom.locate_at_point(&p).is_some()
+        // self.geom.contains(&p)
     }
 
     pub fn contains_many(
@@ -120,7 +126,7 @@ mod tests {
     }
 
     #[test]
-    fn test_load() {
+    fn test_load_embedded() {
         pyo3::prepare_freethreaded_python();
         Python::with_gil(|py| Gshhg::new(py)).unwrap();
     }
