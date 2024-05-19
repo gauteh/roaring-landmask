@@ -6,7 +6,7 @@ use std::{borrow::Borrow, convert::TryInto};
 
 use geo::{point, Contains, Geometry, MultiPolygon, Point, Polygon};
 use numpy::{PyArray, PyReadonlyArrayDyn};
-use rstar::{PointDistance, RTree, RTreeObject, AABB};
+use rstar::{PointDistance, RTree, RTreeObject, AABB, Envelope};
 
 pub static GSHHS_F: &str = "gshhs_f_-180.000000E-90.000000N180.000000E90.000000N.wkb.xz";
 
@@ -17,13 +17,25 @@ pub struct Gshhg {
 }
 
 #[derive(Clone)]
-struct PolW(Polygon);
+struct PolW {
+    p: Polygon,
+    e: AABB<Point<f64>>,
+}
+
+impl PolW {
+    pub fn from(p: Polygon) -> PolW {
+        PolW {
+            p: p.clone(),
+            e: p.envelope()
+        }
+    }
+}
 
 impl RTreeObject for PolW {
     type Envelope = AABB<Point<f64>>;
 
     fn envelope(&self) -> Self::Envelope {
-        self.0.envelope()
+        self.e
     }
 }
 
@@ -33,7 +45,13 @@ impl PointDistance for PolW {
     }
 
     fn contains_point(&self, point: &Point<f64>) -> bool {
-        self.0.contains(point)
+        // fast contains from libgeos
+        // https://github.com/libgeos/geos/blob/main/src/geom/prep/PreparedPolygonContainsProperly.cpp
+        if !self.e.contains_point(point) {
+            return false;
+        }
+
+        self.p.contains(point)
     }
 
     fn distance_2_if_less_or_equal(&self, _point: &Point<f64>, _max_distance: f64) -> Option<f64> {
@@ -45,7 +63,7 @@ impl Gshhg {
     pub fn from_geom(geom: Geometry) -> io::Result<Gshhg> {
         let geom: MultiPolygon = geom.try_into().unwrap();
         assert!(geom.0.len() > 10);
-        let geoms = geom.0.into_iter().map(|p| PolW(p)).collect();
+        let geoms = geom.0.into_iter().map(|p| PolW::from(p)).collect();
 
         let geom = RTree::bulk_load(geoms);
         Ok(Gshhg { geom })
