@@ -1,27 +1,53 @@
 use pyo3::prelude::*;
-use std::{borrow::Borrow, convert::TryInto};
 use std::fs::File;
 use std::io;
 use std::path::Path;
+use std::{borrow::Borrow, convert::TryInto};
 
-use geo::{point, Contains, Geometry, Polygon, MultiPolygon};
-use rstar::RTree;
+use geo::{point, Contains, Geometry, MultiPolygon, Point, Polygon};
 use numpy::{PyArray, PyReadonlyArrayDyn};
+use rstar::{PointDistance, RTree, RTreeObject, AABB};
 
 pub static GSHHS_F: &str = "gshhs_f_-180.000000E-90.000000N180.000000E90.000000N.wkb.xz";
 
 #[pyclass]
 #[derive(Clone)]
 pub struct Gshhg {
-    geom: RTree<Polygon>,
+    geom: RTree<PolW>,
+}
+
+#[derive(Clone)]
+struct PolW(Polygon);
+
+impl RTreeObject for PolW {
+    type Envelope = AABB<Point<f64>>;
+
+    fn envelope(&self) -> Self::Envelope {
+        self.0.envelope()
+    }
+}
+
+impl PointDistance for PolW {
+    fn distance_2(&self, _point: &Point<f64>) -> f64 {
+        panic!("this should only be used for contains, the distance will give the wrong answer");
+    }
+
+    fn contains_point(&self, point: &Point<f64>) -> bool {
+        self.0.contains(point)
+    }
+
+    fn distance_2_if_less_or_equal(&self, _point: &Point<f64>, _max_distance: f64) -> Option<f64> {
+        panic!("this should only be used for contains, the distance will give the wrong answer");
+    }
 }
 
 impl Gshhg {
     pub fn from_geom(geom: Geometry) -> io::Result<Gshhg> {
         let geom: MultiPolygon = geom.try_into().unwrap();
         assert!(geom.0.len() > 10);
+        let geoms = geom.0.into_iter().map(|p| PolW(p)).collect();
 
-        let geom = RTree::bulk_load(geom.0);
+        let geom = RTree::bulk_load(geoms);
         Ok(Gshhg { geom })
     }
 
@@ -71,10 +97,7 @@ impl Gshhg {
     /// Same as `contains`, but does not check for bounds.
     pub(crate) fn contains_unchecked(&self, x: f64, y: f64) -> bool {
         let p = point!(x: x, y: y);
-        // let po = self.geom.nearest_neighbor(&p);
-        // true
         self.geom.locate_at_point(&p).is_some()
-        // self.geom.contains(&p)
     }
 
     pub fn contains_many(
