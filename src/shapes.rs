@@ -4,16 +4,16 @@ use std::io;
 use std::path::Path;
 use std::{borrow::Borrow, convert::TryInto};
 
-use geo::{point, Relate, Contains, Geometry, MultiPolygon, Point, Polygon, PreparedGeometry};
+use geo::{point, Contains, Geometry, MultiPolygon, Point, Polygon, PreparedGeometry, Relate};
 use numpy::{PyArray, PyReadonlyArrayDyn};
-use rstar::{PointDistance, RTree, RTreeObject, AABB, Envelope};
+use rstar::{Envelope, PointDistance, RTree, RTreeObject, AABB};
 
 pub static GSHHS_F: &str = "gshhs_f_-180.000000E-90.000000N180.000000E90.000000N.wkb.xz";
 
 #[pyclass]
 #[derive(Clone)]
 pub struct Gshhg {
-    geom: RTree<PolW>,
+    geom: PreparedGeometry<'static>,
 }
 
 #[derive(Clone)]
@@ -63,11 +63,13 @@ impl PointDistance for PolW {
 impl Gshhg {
     pub fn from_geom(geom: Geometry) -> io::Result<Gshhg> {
         let geom: MultiPolygon = geom.try_into().unwrap();
-        assert!(geom.0.len() > 10);
-        let geoms = geom.0.into_iter().map(|p| PolW::from(p)).collect();
+        // assert!(geom.0.len() > 10);
+        // let geoms = geom.0.into_iter().map(|p| PolW::from(p)).collect();
 
-        let geom = RTree::bulk_load(geoms);
-        Ok(Gshhg { geom })
+        // let geom = RTree::bulk_load(geoms);
+        Ok(Gshhg {
+            geom: PreparedGeometry::from(geom),
+        })
     }
 
     pub fn from_compressed<P: AsRef<Path>>(path: P) -> io::Result<Gshhg> {
@@ -83,13 +85,8 @@ impl Gshhg {
         let geom = wkb::wkb_to_geom(&mut fd).unwrap();
         Ok(geom)
     }
-}
 
-#[pymethods]
-impl Gshhg {
-    /// Make a new Gshhg shapes instance.
-    #[staticmethod]
-    pub fn new(_py: Python) -> io::Result<Self> {
+    pub fn geom_from_embedded() -> io::Result<Geometry> {
         use crate::GsshgData;
 
         let buf = GsshgData::get(&GSHHS_F)
@@ -97,7 +94,17 @@ impl Gshhg {
         let buf: &[u8] = buf.data.borrow();
         let mut fd = xz2::read::XzDecoder::new(buf);
         let geom = wkb::wkb_to_geom(&mut fd).unwrap();
-        Gshhg::from_geom(geom)
+
+        Ok(geom)
+    }
+}
+
+#[pymethods]
+impl Gshhg {
+    /// Make a new Gshhg shapes instance.
+    #[staticmethod]
+    pub fn new(_py: Python) -> io::Result<Self> {
+        Gshhg::from_geom(Gshhg::geom_from_embedded()?)
     }
 
     /// Check if point (x, y) is on land.
@@ -116,7 +123,9 @@ impl Gshhg {
     /// Same as `contains`, but does not check for bounds.
     pub(crate) fn contains_unchecked(&self, x: f64, y: f64) -> bool {
         let p = point!(x: x, y: y);
-        self.geom.locate_at_point(&p).is_some()
+        // self.geom.locate_at_point(&p).is_some()
+        // self.geom.relate(&p).is_contains()
+        self.geom.relate(&p).is_covers()
     }
 
     pub fn contains_many(
