@@ -4,7 +4,7 @@ use std::io;
 use std::path::Path;
 use std::{borrow::Borrow, convert::TryInto};
 
-use geo::{point, Contains, Geometry, MultiPolygon, Point, Polygon};
+use geo::{point, Relate, Contains, Geometry, MultiPolygon, Point, Polygon, PreparedGeometry};
 use numpy::{PyArray, PyReadonlyArrayDyn};
 use rstar::{PointDistance, RTree, RTreeObject, AABB, Envelope};
 
@@ -18,15 +18,15 @@ pub struct Gshhg {
 
 #[derive(Clone)]
 struct PolW {
-    p: Polygon,
+    p: PreparedGeometry<'static>,
     e: AABB<Point<f64>>,
 }
 
 impl PolW {
     pub fn from(p: Polygon) -> PolW {
         PolW {
-            p: p.clone(),
-            e: p.envelope()
+            e: p.envelope(),
+            p: PreparedGeometry::from(p),
         }
     }
 }
@@ -45,13 +45,14 @@ impl PointDistance for PolW {
     }
 
     fn contains_point(&self, point: &Point<f64>) -> bool {
+        // return self.p.covers(point);
         // fast contains from libgeos
         // https://github.com/libgeos/geos/blob/main/src/geom/prep/PreparedPolygonContainsProperly.cpp
         if !self.e.contains_point(point) {
             return false;
         }
 
-        self.p.contains(point)
+        self.p.relate(point).is_contains()
     }
 
     fn distance_2_if_less_or_equal(&self, _point: &Point<f64>, _max_distance: f64) -> Option<f64> {
