@@ -200,6 +200,12 @@ mod tests {
         })
     }
 
+    #[test]
+    fn prepare_geometry() {
+        let geom = Gshhg::geom_from_embedded().unwrap();
+        let prep = PreparedGeometry::from(geom);
+    }
+
     #[cfg(feature = "nightly")]
     mod benches {
         use super::*;
