@@ -46,3 +46,5 @@ default = [ ]
 [profile.release]
 debug = true
 
+[patch.crates-io]
+geo = { path = "/home/gauteh/dev/misc/geo/geo" }

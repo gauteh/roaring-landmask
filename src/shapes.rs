@@ -4,7 +4,7 @@ use std::io;
 use std::path::Path;
 use std::{borrow::Borrow, convert::TryInto};
 
-use geo::{point, Contains, Geometry, MultiPolygon, Point, Polygon};
+use geo::{point, Contains, Geometry, MultiPolygon, Point, Polygon, PreparedGeometry};
 use numpy::{PyArray, PyReadonlyArrayDyn};
 use rstar::{PointDistance, RTree, RTreeObject, AABB, Envelope};
 
