@@ -154,11 +154,11 @@ impl RoaringMask {
         let x = x.as_array();
         let y = y.as_array();
 
-        PyArray::from_iter(
+        PyArray::from_iter_bound(
             py,
             x.iter().zip(y.iter()).map(|(x, y)| self.contains(*x, *y)),
         )
-        .to_owned()
+        .unbind()
     }
 
     pub fn contains_many_par(
@@ -174,7 +174,9 @@ impl RoaringMask {
         let contains = Zip::from(&x)
             .and(&y)
             .par_map_collect(|x, y| self.contains(*x, *y));
-        PyArray::from_owned_array(py, contains).to_owned()
+        PyArray::from_owned_array_bound(py, contains)
+            .unbind()
+            .into()
     }
 }
 

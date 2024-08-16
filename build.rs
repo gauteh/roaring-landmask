@@ -1,8 +1,8 @@
+use path_slash::PathExt;
 use std::env;
 use std::fs;
 use std::io::prelude::*;
 use std::path::Path;
-use path_slash::PathExt;
 
 pub static GSHHS_F: &str = "gshhs_f_-180.000000E-90.000000N180.000000E90.000000N.wkb.xz";
 pub static GSHHS_F_CS: &str = "05bdf3089407b9829a7a5be7ee43f1e4205f2bbc641e4778af77e4814be216da";
@@ -83,6 +83,9 @@ fn copy_or_download(from: impl AsRef<Path>, csum: &str) {
     if &expected != &actual.as_ref() {
         // Delete erronous file
         fs::remove_file(&full_to).unwrap();
-        panic!("Checksum mismatched for {:?}, downloaded file deleted..", &from);
+        panic!(
+            "Checksum mismatched for {:?}, downloaded file deleted..",
+            &from
+        );
     }
 }

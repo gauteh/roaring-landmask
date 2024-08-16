@@ -18,30 +18,33 @@ name = "make_bitmap"
 path = "src/devel/make_bitmap.rs"
 
 [dependencies]
-geos = { version = "8" }
+geo = "0.28"
 lazy_static = "1.4"
-numpy = { version = "0.19" }
-pyo3 = { version = "0.19" , features = [ "abi3-py38" ] }
+numpy = { version = "0.21" }
+pyo3 = { version = "0.21" , features = [ "abi3-py310" ] }
 roaring = "0.10"
 rust-embed = "8"
 xz2 = "0.1"
 ndarray = { version = "0.15", features = [ "rayon" ] }
+wkb = "0.7.1"
+rstar = "0.12.0"
 
 [dev-dependencies]
 rayon = "1"
 
 [build-dependencies]
-reqwest = { version = "0.11", default-features = false, features = [ "blocking", "rustls-tls" ] }
-ring = "0.16"
-path-slash = "0.1"
+reqwest = { version = "0.12", default-features = false, features = [ "blocking", "rustls-tls" ] }
+ring = "0.17"
+path-slash = "0.2"
 
 [features]
 extension-module = ["pyo3/extension-module"]
 simd = [ "roaring/simd" ]
-static = [ "geos/static" ]
-nightly = []
-default = []
+nightly = [ ]
+default = [ ]
 
 [profile.release]
 debug = true
 
+[patch.crates-io]
+geo = { path = "/home/gauteh/dev/misc/geo/geo" }

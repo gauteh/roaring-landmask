@@ -21,15 +21,15 @@ jobs:
 
       - uses: actions/setup-python@v2
         with:
-          python-version: 3.9
+          python-version: 3.11
           architecture: x64
 
       - name: Install deps
         run: |
           pip install numpy
 
-      - run: cargo build --features geos/static --verbose
-      - run: cargo test --features geos/static --verbose
+      - run: cargo build --verbose
+      - run: cargo test --verbose
 
   nightly:
     runs-on: ubuntu-latest
@@ -45,7 +45,7 @@ jobs:
 
       - uses: actions/setup-python@v2
         with:
-          python-version: 3.9
+          python-version: 3.11
           architecture: x64
 
       - name: Install deps
@@ -54,5 +54,5 @@ jobs:
           sudo apt-get -y install build-essential libssl-dev
           pip install numpy
 
-      - run: cargo build --features geos/static,nightly --verbose
-      - run: cargo test --features geos/static,nightly --verbose
+      - run: cargo build --features nightly --verbose
+      - run: cargo test --features nightly --verbose
