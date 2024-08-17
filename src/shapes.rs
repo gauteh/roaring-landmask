@@ -125,6 +125,7 @@ impl Gshhg {
         let p = point!(x: x, y: y);
         // self.geom.locate_at_point(&p).is_some()
         // self.geom.relate(&p).is_contains()
+        println!("contains unchecked");
         self.geom.relate(&p).is_covers()
     }
 
