@@ -18,7 +18,7 @@ pub struct Gshhg {
 
 #[derive(Clone)]
 struct PolW {
-    p: PreparedGeometry<'static>,
+    p: Polygon,
     e: AABB<Point<f64>>,
 }
 
@@ -26,7 +26,7 @@ impl PolW {
     pub fn from(p: Polygon) -> PolW {
         PolW {
             e: p.envelope(),
-            p: PreparedGeometry::from(p),
+            p: p,
         }
     }
 }
@@ -51,8 +51,8 @@ impl PointDistance for PolW {
             return false;
         }
 
-        self.p.relate(point).is_covers()
-        // self.p.contains(point)
+        // self.p.relate(point).is_covers()
+        self.p.contains(point)
     }
 
     fn distance_2_if_less_or_equal(&self, _point: &Point<f64>, _max_distance: f64) -> Option<f64> {
