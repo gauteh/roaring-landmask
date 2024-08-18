@@ -4,9 +4,9 @@ use std::io;
 use std::path::Path;
 use std::{borrow::Borrow, convert::TryInto};
 
-use geo::{point, Contains, Geometry, MultiPolygon, Point, Polygon, PreparedGeometry};
+use geo::{point, Contains, Geometry, MultiPolygon, Point, Polygon, PreparedGeometry, Relate};
 use numpy::{PyArray, PyReadonlyArrayDyn};
-use rstar::{PointDistance, RTree, RTreeObject, AABB, Envelope};
+use rstar::{Envelope, PointDistance, RTree, RTreeObject, AABB};
 
 pub static GSHHS_F: &str = "gshhs_f_-180.000000E-90.000000N180.000000E90.000000N.wkb.xz";
 
@@ -18,15 +18,15 @@ pub struct Gshhg {
 
 #[derive(Clone)]
 struct PolW {
-    p: Polygon,
+    p: PreparedGeometry<'static>,
     e: AABB<Point<f64>>,
 }
 
 impl PolW {
     pub fn from(p: Polygon) -> PolW {
         PolW {
-            p: p.clone(),
-            e: p.envelope()
+            e: p.envelope(),
+            p: PreparedGeometry::from(p),
         }
     }
 }
@@ -51,7 +51,8 @@ impl PointDistance for PolW {
             return false;
         }
 
-        self.p.contains(point)
+        self.p.relate(point).is_covers()
+        // self.p.contains(point)
     }
 
     fn distance_2_if_less_or_equal(&self, _point: &Point<f64>, _max_distance: f64) -> Option<f64> {
