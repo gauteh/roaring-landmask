@@ -1,6 +1,6 @@
-use std::io::prelude::*;
-use std::fs::File;
 use roaring::*;
+use std::fs::File;
+use std::io::prelude::*;
 
 fn main() -> std::io::Result<()> {
     println!("opening mask.bin..");
@@ -33,7 +33,10 @@ fn main() -> std::io::Result<()> {
         }
     }
 
-    println!("serialized size: {} mb", tmap.serialized_size() / 1024 / 1024);
+    println!(
+        "serialized size: {} mb",
+        tmap.serialized_size() / 1024 / 1024
+    );
 
     println!("serializing bitmap to file: mask.tbmap..");
     {

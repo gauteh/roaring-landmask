@@ -9,7 +9,7 @@ def test_dateline():
 
     xx, yy = np.meshgrid(x, y)
     xx, yy = xx.ravel(), yy.ravel()
-    mm = mask.contains_many(xx, yy)
+    mm = mask.contains_many_par(xx, yy)
 
     # Offset
     x2 = np.linspace(180, 540, 100)
@@ -18,7 +18,7 @@ def test_dateline():
 
     xx, yy = np.meshgrid(x2, y2)
     xx, yy = xx.ravel(), yy.ravel()
-    MM = mask.contains_many(xx, yy)
+    MM = mask.contains_many_par(xx, yy)
 
     np.testing.assert_array_equal(mm, MM)
 
