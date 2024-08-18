@@ -101,14 +101,7 @@ impl Gshhg {
     /// Make a new Gshhg shapes instance.
     #[staticmethod]
     pub fn new(_py: Python) -> io::Result<Self> {
-        use crate::GsshgData;
-
-        let buf = GsshgData::get(&GSHHS_F)
-            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "cannot find shapes"))?;
-        let buf: &[u8] = buf.data.borrow();
-        let mut fd = xz2::read::XzDecoder::new(buf);
-        let geom = wkb::wkb_to_geom(&mut fd).unwrap();
-        Gshhg::from_geom(geom)
+        Gshhg::from_geom(Gshhg::geom_from_embedded()?)
     }
 
     /// Check if point (x, y) is on land.
