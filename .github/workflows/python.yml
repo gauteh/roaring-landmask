@@ -45,7 +45,7 @@ jobs:
       - name: Install deps
         run: |
           sudo apt-get -y update
-          sudo apt-get -y install build-essential libssl-dev
+          sudo apt-get -y install build-essential libssl-dev libc++-dev
 
       - name: Build wheels
         uses: PyO3/maturin-action@v1
