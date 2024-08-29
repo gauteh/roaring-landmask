@@ -40,7 +40,7 @@ path-slash = "0.2"
 extension-module = ["pyo3/extension-module"]
 simd = [ "roaring/simd" ]
 static = [ "geos/static" ]
-nightly = []
+nightly = [ "simd" ]
 default = []
 
 [profile.release]
