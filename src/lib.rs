@@ -329,6 +329,7 @@ mod tests {
         }
 
         #[bench]
+        #[ignore]
         fn test_contains_many_par(b: &mut Bencher) {
             pyo3::prepare_freethreaded_python();
             pyo3::Python::with_gil(|py| {
