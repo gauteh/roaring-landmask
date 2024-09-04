@@ -71,19 +71,22 @@ use pyo3::prelude::*;
 use std::io;
 
 pub mod mask;
+pub mod providers;
 pub mod shapes;
 
 pub use mask::RoaringMask;
-pub use shapes::Gshhg;
+pub use shapes::Shapes;
+pub use providers::LandmaskProvider;
 
-include!(concat!(env!("OUT_DIR"), "/gshhs.rs"));
+include!(concat!(env!("OUT_DIR"), "/source_data.rs"));
 
 #[pymodule]
 fn roaring_landmask(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<mask::Affine>()?;
     m.add_class::<RoaringMask>()?;
-    m.add_class::<Gshhg>()?;
+    m.add_class::<Shapes>()?;
     m.add_class::<RoaringLandmask>()?;
+    m.add_class::<LandmaskProvider>()?;
 
     Ok(())
 }
@@ -93,15 +96,20 @@ pub struct RoaringLandmask {
     #[pyo3(get)]
     pub mask: RoaringMask,
     #[pyo3(get)]
-    pub shapes: shapes::Gshhg,
+    pub shapes: Shapes,
 }
 
 #[pymethods]
 impl RoaringLandmask {
     #[staticmethod]
     pub fn new(py: Python) -> io::Result<RoaringLandmask> {
-        let mask = RoaringMask::new()?;
-        let shapes = Gshhg::new(py)?;
+        Self::new_with_provider(py, LandmaskProvider::Gshhg)
+    }
+
+    #[staticmethod]
+    pub fn new_with_provider(py: Python, landmask_provider: LandmaskProvider) -> io::Result<RoaringLandmask> {
+        let mask = RoaringMask::new(landmask_provider)?;
+        let shapes = Shapes::new(py, landmask_provider)?;
 
         Ok(RoaringLandmask { mask, shapes })
     }
@@ -177,7 +185,8 @@ mod tests {
     fn load_ms() {
         pyo3::prepare_freethreaded_python();
         pyo3::Python::with_gil(|py| {
-            let _ms = RoaringLandmask::new(py).unwrap();
+            let _ms = RoaringLandmask::new_with_provider(py, LandmaskProvider::Gshhg).unwrap();
+            let _ms = RoaringLandmask::new_with_provider(py, LandmaskProvider::Osm).unwrap();
         })
     }
 
@@ -185,7 +194,10 @@ mod tests {
     fn test_np() {
         pyo3::prepare_freethreaded_python();
         pyo3::Python::with_gil(|py| {
-            let mask = RoaringLandmask::new(py).unwrap();
+            let mask = RoaringLandmask::new_with_provider(py, LandmaskProvider::Gshhg).unwrap();
+            assert!(!mask.contains(5., 90.));
+
+            let mask = RoaringLandmask::new_with_provider(py, LandmaskProvider::Osm).unwrap();
             assert!(!mask.contains(5., 90.));
         })
     }
@@ -194,7 +206,10 @@ mod tests {
     fn test_sp() {
         pyo3::prepare_freethreaded_python();
         pyo3::Python::with_gil(|py| {
-            let mask = RoaringLandmask::new(py).unwrap();
+            let mask = RoaringLandmask::new_with_provider(py, LandmaskProvider::Gshhg).unwrap();
+            assert!(mask.contains(5., -89.99));
+
+            let mask = RoaringLandmask::new_with_provider(py, LandmaskProvider::Osm).unwrap();
             assert!(mask.contains(5., -89.99));
         })
     }
@@ -204,7 +219,10 @@ mod tests {
     fn test_sp_oob() {
         pyo3::prepare_freethreaded_python();
         pyo3::Python::with_gil(|py| {
-            let mask = RoaringLandmask::new(py).unwrap();
+            let mask = RoaringLandmask::new_with_provider(py, LandmaskProvider::Gshhg).unwrap();
+            assert!(mask.contains(5., -90.));
+
+            let mask = RoaringLandmask::new_with_provider(py, LandmaskProvider::Osm).unwrap();
             assert!(mask.contains(5., -90.));
         })
     }
@@ -213,23 +231,21 @@ mod tests {
     fn test_dateline_wrap() {
         pyo3::prepare_freethreaded_python();
         pyo3::Python::with_gil(|py| {
-            let mask = RoaringLandmask::new(py).unwrap();
-
-            // Close to NP
-            assert!(!mask.contains(5., 89.));
-
-            // Close to SP
-            assert!(mask.contains(5., -89.));
-
-            // Within bounds
-            let x = (-180..180).map(f64::from).collect::<Vec<_>>();
-            let m = x.iter().map(|x| mask.contains(*x, 65.)).collect::<Vec<_>>();
-
-            // Wrapped bounds
-            let x = (180..540).map(f64::from).collect::<Vec<_>>();
-            let mm = x.iter().map(|x| mask.contains(*x, 65.)).collect::<Vec<_>>();
-
-            assert_eq!(m, mm);
+            for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+                let mask = RoaringLandmask::new_with_provider(py, provider).unwrap();
+                // Close to NP
+                assert!(!mask.contains(5., 89.));
+                // Close to SP
+                assert!(mask.contains(5., -89.));
+                // Within bounds
+                let x = (-180..180).map(f64::from).collect::<Vec<_>>();
+                let m = x.iter().map(|x| mask.contains(*x, 65.)).collect::<Vec<_>>();
+                // Wrapped bounds
+                let x = (180..540).map(f64::from).collect::<Vec<_>>();
+                let mm = x.iter().map(|x| mask.contains(*x, 65.)).collect::<Vec<_>>();
+                assert_eq!(m, mm);
+    
+            }
         })
     }
 
@@ -238,7 +254,10 @@ mod tests {
     fn test_not_on_earth_north() {
         pyo3::prepare_freethreaded_python();
         pyo3::Python::with_gil(|py| {
-            let mask = RoaringLandmask::new(py).unwrap();
+            let mask = RoaringLandmask::new_with_provider(py, LandmaskProvider::Gshhg).unwrap();
+            assert!(!mask.contains(5., 95.));
+
+            let mask = RoaringLandmask::new_with_provider(py, LandmaskProvider::Osm).unwrap();
             assert!(!mask.contains(5., 95.));
         })
     }
@@ -248,7 +267,10 @@ mod tests {
     fn test_not_on_earth_south() {
         pyo3::prepare_freethreaded_python();
         pyo3::Python::with_gil(|py| {
-            let mask = RoaringLandmask::new(py).unwrap();
+            let mask = RoaringLandmask::new_with_provider(py, LandmaskProvider::Gshhg).unwrap();
+            assert!(!mask.contains(5., -95.));
+
+            let mask = RoaringLandmask::new_with_provider(py, LandmaskProvider::Osm).unwrap();
             assert!(!mask.contains(5., -95.));
         })
     }
@@ -262,12 +284,13 @@ mod tests {
         fn test_contains_on_land(b: &mut Bencher) {
             pyo3::prepare_freethreaded_python();
             pyo3::Python::with_gil(|py| {
-                let mask = RoaringLandmask::new(py).unwrap();
-
-                assert!(mask.contains(15., 65.6));
-                assert!(mask.contains(10., 60.0));
-
-                b.iter(|| mask.contains(15., 65.6))
+                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+                    let mask = RoaringLandmask::new_with_provider(py, provider).unwrap();
+                    assert!(mask.contains(15., 65.6));
+                    assert!(mask.contains(10., 60.0));
+                    b.iter(|| mask.contains(15., 65.6));
+        
+                }
             })
         }
 
@@ -275,11 +298,11 @@ mod tests {
         fn test_contains_in_ocean(b: &mut Bencher) {
             pyo3::prepare_freethreaded_python();
             pyo3::Python::with_gil(|py| {
-                let mask = RoaringLandmask::new(py).unwrap();
-
-                assert!(!mask.contains(5., 65.6));
-
-                b.iter(|| mask.contains(5., 65.6));
+                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+                    let mask = RoaringLandmask::new_with_provider(py, provider).unwrap();
+                    assert!(!mask.contains(5., 65.6));
+                    b.iter(|| mask.contains(5., 65.6));
+                }
             });
         }
 
@@ -287,44 +310,39 @@ mod tests {
         fn test_contains_many(b: &mut Bencher) {
             pyo3::prepare_freethreaded_python();
             pyo3::Python::with_gil(|py| {
-                let mask = RoaringLandmask::new(py).unwrap();
-
-                let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
-                    .map(|v| v as f64 * 0.5 - 180.)
-                    .map(|x| {
-                        (0..180 * 2)
-                            .map(|y| y as f64 * 0.5 - 90.)
-                            .map(move |y| (x, y))
-                    })
-                    .flatten()
-                    .unzip();
-
-                let mask = RoaringLandmask::new(py).unwrap();
-
-                let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
-                    .map(|v| v as f64 * 0.5 - 180.)
-                    .map(|x| {
-                        (0..180 * 2)
-                            .map(|y| y as f64 * 0.5 - 90.)
-                            .map(move |y| (x, y))
-                    })
-                    .flatten()
-                    .unzip();
-
-                let x = PyArray::from_vec(py, x);
-                let y = PyArray::from_vec(py, y);
-
-                println!("testing {} points..", x.len());
-
-                b.iter(|| {
-                    let len = x.len();
-
-                    let x = x.to_dyn().readonly();
-                    let y = y.to_dyn().readonly();
-
-                    let onland = mask.contains_many(py, x, y);
-                    assert!(onland.as_ref(py).len() == len);
-                })
+                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+                    let mask = RoaringLandmask::new_with_provider(py, provider).unwrap();
+                    let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
+                        .map(|v| v as f64 * 0.5 - 180.)
+                        .map(|x| {
+                            (0..180 * 2)
+                                .map(|y| y as f64 * 0.5 - 90.)
+                                .map(move |y| (x, y))
+                        })
+                        .flatten()
+                        .unzip();
+                    let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
+                        .map(|v| v as f64 * 0.5 - 180.)
+                        .map(|x| {
+                            (0..180 * 2)
+                                .map(|y| y as f64 * 0.5 - 90.)
+                                .map(move |y| (x, y))
+                        })
+                        .flatten()
+                        .unzip();
+                    let x = PyArray::from_vec(py, x);
+                    let y = PyArray::from_vec(py, y);
+                    println!("testing {} points..", x.len());
+                    b.iter(|| {
+                        let len = x.len();
+    
+                        let x = x.to_dyn().readonly();
+                        let y = y.to_dyn().readonly();
+    
+                        let onland = mask.contains_many(py, x, y);
+                        assert!(onland.as_ref(py).len() == len);
+                    });
+                }
             })
         }
 
@@ -333,44 +351,40 @@ mod tests {
         fn test_contains_many_par(b: &mut Bencher) {
             pyo3::prepare_freethreaded_python();
             pyo3::Python::with_gil(|py| {
-                let mask = RoaringLandmask::new(py).unwrap();
-
-                let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
-                    .map(|v| v as f64 * 0.5 - 180.)
-                    .map(|x| {
-                        (0..180 * 2)
-                            .map(|y| y as f64 * 0.5 - 90.)
-                            .map(move |y| (x, y))
-                    })
-                    .flatten()
-                    .unzip();
-
-                let mask = RoaringLandmask::new(py).unwrap();
-
-                let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
-                    .map(|v| v as f64 * 0.5 - 180.)
-                    .map(|x| {
-                        (0..180 * 2)
-                            .map(|y| y as f64 * 0.5 - 90.)
-                            .map(move |y| (x, y))
-                    })
-                    .flatten()
-                    .unzip();
-
-                let x = PyArray::from_vec(py, x);
-                let y = PyArray::from_vec(py, y);
-
-                println!("testing {} points..", x.len());
-
-                b.iter(|| {
-                    let len = x.len();
-
-                    let x = x.to_dyn().readonly();
-                    let y = y.to_dyn().readonly();
-
-                    let onland = mask.contains_many_par(py, x, y);
-                    assert!(onland.as_ref(py).len() == len);
-                })
+                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+                    let mask = RoaringLandmask::new_with_provider(py, provider).unwrap();
+                    let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
+                        .map(|v| v as f64 * 0.5 - 180.)
+                        .map(|x| {
+                            (0..180 * 2)
+                                .map(|y| y as f64 * 0.5 - 90.)
+                                .map(move |y| (x, y))
+                        })
+                        .flatten()
+                        .unzip();
+                    let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
+                        .map(|v| v as f64 * 0.5 - 180.)
+                        .map(|x| {
+                            (0..180 * 2)
+                                .map(|y| y as f64 * 0.5 - 90.)
+                                .map(move |y| (x, y))
+                        })
+                        .flatten()
+                        .unzip();
+                    let x = PyArray::from_vec(py, x);
+                    let y = PyArray::from_vec(py, y);
+                    println!("testing {} points..", x.len());
+                    b.iter(|| {
+                        let len = x.len();
+    
+                        let x = x.to_dyn().readonly();
+                        let y = y.to_dyn().readonly();
+    
+                        let onland = mask.contains_many_par(py, x, y);
+                        assert!(onland.as_ref(py).len() == len);
+                    });
+    
+                }
             })
         }
     }

@@ -7,24 +7,24 @@ use std::path::Path;
 use geos::{CoordSeq, Geom, Geometry, PreparedGeometry};
 use numpy::{PyArray, PyReadonlyArrayDyn};
 
-pub static GSHHS_F: &str = "gshhs_f_-180.000000E-90.000000N180.000000E90.000000N.wkb.xz";
+pub use crate::providers::LandmaskProvider;
 
 #[pyclass]
-pub struct Gshhg {
+pub struct Shapes {
     // prepped requires `geom` above to be around, and is valid as long as geom is alive.
     geom: Geometry,
     prepped: PreparedGeometry,
 }
 
-// impl Drop for Gshhg {
+// impl Drop for Shapes {
 //     fn drop(&mut self) {
 //         unsafe { drop(Box::from_raw(self.geom)) }
 //     }
 // }
 
 // PreparedGeometry is Send+Sync, Geometry is Send+Sync. *mut Geometry is never modified.
-// unsafe impl Send for Gshhg {}
-// unsafe impl Sync for Gshhg {}
+// unsafe impl Send for Shapes {}
+// unsafe impl Sync for Shapes {}
 
 // `PreparededGeometry::contains` needs a call to `contains` before it is thread-safe:
 // https://github.com/georust/geos/issues/95
@@ -34,38 +34,35 @@ fn warmup_prepped(prepped: &PreparedGeometry) {
     prepped.contains(&point).unwrap();
 }
 
-impl Clone for Gshhg {
+impl Clone for Shapes {
     fn clone(&self) -> Self {
         let geom = Clone::clone(&self.geom);
         let prepped = geom.to_prepared_geom().unwrap();
         warmup_prepped(&prepped);
 
-        Gshhg {
-            geom,
-            prepped,
-        }
+        Shapes { geom, prepped }
     }
 }
 
-impl Gshhg {
-    pub fn from_geom(geom: Geometry) -> io::Result<Gshhg> {
+impl Shapes {
+    pub fn from_geom(geom: Geometry) -> io::Result<Shapes> {
         // let bxd = Box::new(geom);
         // let gptr = Box::into_raw(bxd);
         // let prepped = unsafe { (&*gptr).to_prepared_geom() }
         //     .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "cannot prepare geomtry"))?;
-        let prepped = geom.to_prepared_geom().map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "cannot prepare geomtry"))?;
+
+        let prepped = geom
+            .to_prepared_geom()
+            .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "cannot prepare geomtry"))?;
         warmup_prepped(&prepped);
 
-        Ok(Gshhg {
-            geom,
-            prepped,
-        })
+        Ok(Shapes { geom, prepped })
     }
 
-    pub fn from_compressed<P: AsRef<Path>>(path: P) -> io::Result<Gshhg> {
-        let g = Gshhg::get_geometry_from_compressed(path)?;
+    pub fn from_compressed<P: AsRef<Path>>(path: P) -> io::Result<Shapes> {
+        let g = Shapes::get_geometry_from_compressed(path)?;
 
-        Gshhg::from_geom(g)
+        Shapes::from_geom(g)
     }
 
     pub fn get_geometry_from_compressed<P: AsRef<Path>>(path: P) -> io::Result<Geometry> {
@@ -80,22 +77,27 @@ impl Gshhg {
 }
 
 #[pymethods]
-impl Gshhg {
+impl Shapes {
     /// Make a new Gshhg shapes instance.
     #[staticmethod]
-    pub fn new(py: Python) -> io::Result<Self> {
-        let buf = Gshhg::wkb(py)?;
+    pub fn new(py: Python, provider: LandmaskProvider) -> io::Result<Self> {
+        let buf = Shapes::wkb(py, provider)?;
         let g = geos::Geometry::new_from_wkb(buf.as_bytes()).unwrap();
-        Gshhg::from_geom(g)
+        Shapes::from_geom(g)
     }
 
     /// Get the WKB for the GSHHG shapes (full resolution).
     #[staticmethod]
-    pub fn wkb(py: Python) -> io::Result<&PyBytes> {
+    pub fn wkb(py: Python, provider: LandmaskProvider) -> io::Result<&PyBytes> {
         use crate::GsshgData;
+        use crate::OsmData;
 
-        let buf = GsshgData::get(&GSHHS_F)
-            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "cannot find shapes"))?;
+        let buf = match provider {
+            LandmaskProvider::Gshhg => GsshgData::get("gshhg.wkb.xz"),
+            LandmaskProvider::Osm => OsmData::get("osm.wkb.xz"),
+        }
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "cannot find shapes"))?;
+
         let buf: &[u8] = buf.data.borrow();
         let mut fd = xz2::read::XzDecoder::new(buf);
 
@@ -167,34 +169,41 @@ mod tests {
 
     #[test]
     fn test_load_compressed() {
-        let _s = Gshhg::from_compressed(
-            "gshhs/gshhs_f_-180.000000E-90.000000N180.000000E90.000000N.wkb.xz",
-        )
-        .unwrap();
+        let _s = Shapes::from_compressed("assets/gshhg.wkb.xz").unwrap();
+        let _s = Shapes::from_compressed("assets/osm.wkb.xz").unwrap();
     }
 
     #[test]
     fn test_load() {
         pyo3::prepare_freethreaded_python();
-        Python::with_gil(|py| Gshhg::new(py)).unwrap();
+        Python::with_gil(|py| {
+            Shapes::new(py, LandmaskProvider::Gshhg).unwrap();
+            Shapes::new(py, LandmaskProvider::Osm).unwrap();
+        });
     }
 
     #[test]
     fn test_np() {
         pyo3::prepare_freethreaded_python();
         Python::with_gil(|py| {
-            let mask = Gshhg::new(py).unwrap();
+            let mask = Shapes::new(py, LandmaskProvider::Gshhg).unwrap();
             assert!(!mask.contains(5., 90.));
-        })
+
+            let mask = Shapes::new(py, LandmaskProvider::Osm).unwrap();
+            assert!(!mask.contains(5., 90.));
+        });
     }
 
     #[test]
     fn test_sp() {
         pyo3::prepare_freethreaded_python();
         Python::with_gil(|py| {
-            let mask = Gshhg::new(py).unwrap();
+            let mask = Shapes::new(py, LandmaskProvider::Gshhg).unwrap();
             assert!(mask.contains(5., -89.99));
-        })
+
+            let mask = Shapes::new(py, LandmaskProvider::Osm).unwrap();
+            assert!(mask.contains(5., -89.99));
+        });
     }
 
     #[cfg(feature = "nightly")]
@@ -206,12 +215,12 @@ mod tests {
         fn test_contains_on_land(b: &mut Bencher) {
             pyo3::prepare_freethreaded_python();
             Python::with_gil(|py| {
-                let s = Gshhg::new(py).unwrap();
-
-                assert!(s.contains(15., 65.6));
-                assert!(s.contains(10., 60.0));
-
-                b.iter(|| s.contains(15., 65.6))
+                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+                    let s = Shapes::new(py, provider).unwrap();
+                    assert!(s.contains(15., 65.6));
+                    assert!(s.contains(10., 60.0));
+                    b.iter(|| s.contains(15., 65.6));
+                }
             })
         }
 
@@ -219,11 +228,11 @@ mod tests {
         fn test_contains_in_ocean(b: &mut Bencher) {
             pyo3::prepare_freethreaded_python();
             Python::with_gil(|py| {
-                let s = Gshhg::new(py).unwrap();
-
-                assert!(!s.contains(5., 65.6));
-
-                b.iter(|| s.contains(5., 65.6))
+                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+                    let s = Shapes::new(py, provider).unwrap();
+                    assert!(!s.contains(5., 65.6));
+                    b.iter(|| s.contains(5., 65.6));
+                }
             })
         }
     }

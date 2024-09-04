@@ -1,5 +1,13 @@
 name: Rust build and test
-on: push
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - '*'
+  pull_request:
+  workflow_dispatch:
 jobs:
   stable:
     runs-on: ${{matrix.platform}}
