@@ -15,7 +15,7 @@ is stored in a tree of [Roaring Bitmaps](https://roaringbitmap.org/). Points
 close to the shore might still be in the ocean, so a positive
 value is then checked against the vector shapes of the coastline.
 
-<img src="the_earth.png" width="100%" />
+<img src="the_earth_gshhg.png" width="100%" />
 
 ([source](https://github.com/gauteh/roaring-landmask/blob/main/src/devel/make_demo_plot.py))
 
@@ -23,7 +23,7 @@ value is then checked against the vector shapes of the coastline.
 The landmask is generated from the [GSHHG shoreline
 database](https://www.soest.hawaii.edu/pwessel/gshhg/) (Wessel, P., and W. H.
 F. Smith, A Global Self-consistent, Hierarchical, High-resolution Shoreline
-Database, J. Geophys. Res., 101, 8741-8743, 1996).
+Database, J. Geophys. Res., 101, 8741-8743, 1996) and the [OpenStreetMap](https://www.openstreetmap.org/) ([© OpenStreetMap](http://openstreetmap.org/copyright)).
 
 An alternative is the
 [opendrift-landmask-data](https://github.com/OpenDrift/opendrift-landmask-data),

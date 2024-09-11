@@ -1,12 +1,16 @@
-from roaring_landmask import Gshhg
+import pytest
+from roaring_landmask import Shapes, LandmaskProvider
 import shapely.wkb as wkb
 
-def test_read_wkb():
-    w = Gshhg.wkb()
 
-def test_load_wkb():
-    w = Gshhg.wkb()
+@pytest.mark.parametrize("provider",
+                         [LandmaskProvider.Gshhg, LandmaskProvider.Osm])
+def test_read_wkb(provider):
+    w = Shapes.wkb(provider)
+
+
+@pytest.mark.parametrize("provider",
+                         [LandmaskProvider.Gshhg, LandmaskProvider.Osm])
+def test_load_wkb(provider):
+    w = Shapes.wkb(provider)
     polys = wkb.loads(w)
-
-
-

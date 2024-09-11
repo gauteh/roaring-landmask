@@ -193,7 +193,7 @@ mod tests {
     fn required_size() {
         println!("upper bound coordinate system: {}", NY * NX);
 
-        for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+        for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
             let mask = RoaringMask::new(provider).unwrap();
             println!("maximum in tree: {:?}", mask.tmap.max());
             assert!(mask.tmap.max().unwrap() <= std::u32::MAX as u64);
@@ -202,7 +202,7 @@ mod tests {
 
     #[test]
     fn test_np() {
-        for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+        for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
             let mask = RoaringMask::new(provider).unwrap();
             assert!(!mask.contains(5., 90.));
         }
@@ -210,7 +210,7 @@ mod tests {
 
     #[test]
     fn test_sp() {
-        for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+        for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
             let mask = RoaringMask::new(provider).unwrap();
             assert!(mask.contains(5., -90.));
         }
@@ -224,7 +224,7 @@ mod tests {
         #[bench]
         fn load_tmap(b: &mut Bencher) {
             b.iter(|| {
-                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                     let _mask = RoaringMask::new(provider).unwrap();
                 }
             })
@@ -257,30 +257,30 @@ mod tests {
 
         #[bench]
         fn test_contains_on_land(b: &mut Bencher) {
-            for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+            for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                 let mask = RoaringMask::new(provider).unwrap();
 
                 assert!(mask.contains(15., 65.6));
                 assert!(mask.contains(10., 60.0));
-    
+
                 b.iter(|| mask.contains(15., 65.6))
             }
         }
 
         #[bench]
         fn test_contains_in_ocean(b: &mut Bencher) {
-            for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+            for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                 let mask = RoaringMask::new(provider).unwrap();
 
                 assert!(!mask.contains(5., 65.6));
-    
+
                 b.iter(|| mask.contains(5., 65.6))
             }
         }
 
         #[bench]
         fn test_contains_many(b: &mut Bencher) {
-            for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+            for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                 let mask = RoaringMask::new(provider).unwrap();
 
                 let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
@@ -292,9 +292,9 @@ mod tests {
                     })
                     .flatten()
                     .unzip();
-    
+
                 println!("testing {} points..", x.len());
-    
+
                 b.iter(|| {
                     let _onland = x
                         .iter()

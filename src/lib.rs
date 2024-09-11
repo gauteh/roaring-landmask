@@ -75,8 +75,8 @@ pub mod providers;
 pub mod shapes;
 
 pub use mask::RoaringMask;
-pub use shapes::Shapes;
 pub use providers::LandmaskProvider;
+pub use shapes::Shapes;
 
 include!(concat!(env!("OUT_DIR"), "/source_data.rs"));
 
@@ -107,7 +107,10 @@ impl RoaringLandmask {
     }
 
     #[staticmethod]
-    pub fn new_with_provider(py: Python, landmask_provider: LandmaskProvider) -> io::Result<RoaringLandmask> {
+    pub fn new_with_provider(
+        py: Python,
+        landmask_provider: LandmaskProvider,
+    ) -> io::Result<RoaringLandmask> {
         let mask = RoaringMask::new(landmask_provider)?;
         let shapes = Shapes::new(py, landmask_provider)?;
 
@@ -231,7 +234,7 @@ mod tests {
     fn test_dateline_wrap() {
         pyo3::prepare_freethreaded_python();
         pyo3::Python::with_gil(|py| {
-            for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+            for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                 let mask = RoaringLandmask::new_with_provider(py, provider).unwrap();
                 // Close to NP
                 assert!(!mask.contains(5., 89.));
@@ -244,7 +247,6 @@ mod tests {
                 let x = (180..540).map(f64::from).collect::<Vec<_>>();
                 let mm = x.iter().map(|x| mask.contains(*x, 65.)).collect::<Vec<_>>();
                 assert_eq!(m, mm);
-    
             }
         })
     }
@@ -284,12 +286,11 @@ mod tests {
         fn test_contains_on_land(b: &mut Bencher) {
             pyo3::prepare_freethreaded_python();
             pyo3::Python::with_gil(|py| {
-                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                     let mask = RoaringLandmask::new_with_provider(py, provider).unwrap();
                     assert!(mask.contains(15., 65.6));
                     assert!(mask.contains(10., 60.0));
                     b.iter(|| mask.contains(15., 65.6));
-        
                 }
             })
         }
@@ -298,7 +299,7 @@ mod tests {
         fn test_contains_in_ocean(b: &mut Bencher) {
             pyo3::prepare_freethreaded_python();
             pyo3::Python::with_gil(|py| {
-                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                     let mask = RoaringLandmask::new_with_provider(py, provider).unwrap();
                     assert!(!mask.contains(5., 65.6));
                     b.iter(|| mask.contains(5., 65.6));
@@ -310,7 +311,7 @@ mod tests {
         fn test_contains_many(b: &mut Bencher) {
             pyo3::prepare_freethreaded_python();
             pyo3::Python::with_gil(|py| {
-                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                     let mask = RoaringLandmask::new_with_provider(py, provider).unwrap();
                     let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
                         .map(|v| v as f64 * 0.5 - 180.)
@@ -335,10 +336,10 @@ mod tests {
                     println!("testing {} points..", x.len());
                     b.iter(|| {
                         let len = x.len();
-    
+
                         let x = x.to_dyn().readonly();
                         let y = y.to_dyn().readonly();
-    
+
                         let onland = mask.contains_many(py, x, y);
                         assert!(onland.as_ref(py).len() == len);
                     });
@@ -351,7 +352,7 @@ mod tests {
         fn test_contains_many_par(b: &mut Bencher) {
             pyo3::prepare_freethreaded_python();
             pyo3::Python::with_gil(|py| {
-                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                     let mask = RoaringLandmask::new_with_provider(py, provider).unwrap();
                     let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
                         .map(|v| v as f64 * 0.5 - 180.)
@@ -376,14 +377,13 @@ mod tests {
                     println!("testing {} points..", x.len());
                     b.iter(|| {
                         let len = x.len();
-    
+
                         let x = x.to_dyn().readonly();
                         let y = y.to_dyn().readonly();
-    
+
                         let onland = mask.contains_many_par(py, x, y);
                         assert!(onland.as_ref(py).len() == len);
                     });
-    
                 }
             })
         }

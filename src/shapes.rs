@@ -215,7 +215,7 @@ mod tests {
         fn test_contains_on_land(b: &mut Bencher) {
             pyo3::prepare_freethreaded_python();
             Python::with_gil(|py| {
-                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                     let s = Shapes::new(py, provider).unwrap();
                     assert!(s.contains(15., 65.6));
                     assert!(s.contains(10., 60.0));
@@ -228,7 +228,7 @@ mod tests {
         fn test_contains_in_ocean(b: &mut Bencher) {
             pyo3::prepare_freethreaded_python();
             Python::with_gil(|py| {
-                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm]{
+                for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                     let s = Shapes::new(py, provider).unwrap();
                     assert!(!s.contains(5., 65.6));
                     b.iter(|| s.contains(5., 65.6));

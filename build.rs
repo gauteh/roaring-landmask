@@ -8,13 +8,15 @@ pub static GSHHG: &str = "gshhg.wkb.xz";
 pub static GSHHG_SHA256: &str = "05bdf3089407b9829a7a5be7ee43f1e4205f2bbc641e4778af77e4814be216da";
 
 pub static GSHHG_MASK: &str = "gshhg_mask.tbmap.xz";
-pub static GSHHG_MASK_SHA256: &str = "5ea0e772ffc6ca8ad10c5de02be50670cbaedcff20b3541df6b78d3e1fdf48a1";
+pub static GSHHG_MASK_SHA256: &str =
+    "5ea0e772ffc6ca8ad10c5de02be50670cbaedcff20b3541df6b78d3e1fdf48a1";
 
 pub static OSM: &str = "osm.wkb.xz";
 pub static OSM_SHA256: &str = "7cbbbb56dc8f6a339d837e57aac4c50c9f54e7ac1118803274725cf61226b727";
 
 pub static OSM_MASK: &str = "osm_mask.tbmap.xz";
-pub static OSM_MASK_SHA256: &str = "e60dd30737ad8480619d727bb246a1107d30a66563b73628337dc3f92255b684";
+pub static OSM_MASK_SHA256: &str =
+    "e60dd30737ad8480619d727bb246a1107d30a66563b73628337dc3f92255b684";
 
 fn main() {
     println!("hello");
@@ -40,12 +42,12 @@ pub struct OsmData;
     ",
         assets_dir.to_slash().unwrap(),
         assets_dir.to_slash().unwrap()
-    ).unwrap();
+    )
+    .unwrap();
 
     if !assets_dir.exists() {
         fs::create_dir(assets_dir).unwrap();
     }
-
 
     // copy or download files
     if env::var("DOCS_RS").is_err() {

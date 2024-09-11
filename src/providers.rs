@@ -1,8 +1,8 @@
 use pyo3::prelude::*;
 
 #[pyclass]
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum LandmaskProvider {
     Gshhg,
-    Osm
+    Osm,
 }
