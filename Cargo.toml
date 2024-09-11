@@ -7,7 +7,7 @@ edition = "2018"
 license = "MIT"
 homepage = "https://github.com/gauteh/roaring-landmask"
 repository = "https://github.com/gauteh/roaring-landmask"
-exclude = [ "gshhs/*" ]
+exclude = [ "assets/*" ]
 
 [lib]
 name = "roaring_landmask"
