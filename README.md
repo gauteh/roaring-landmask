@@ -1,7 +1,8 @@
 [![Crates.io](https://img.shields.io/crates/v/roaring-landmask.svg)](https://crates.io/crates/roaring-landmask)
 [![Documentation](https://docs.rs/roaring-landmask/badge.svg)](https://docs.rs/roaring-landmask/)
 [![PyPI](https://img.shields.io/pypi/v/roaring-landmask.svg?style=flat-square)](https://pypi.org/project/roaring-landmask/)
-[![Actions Status](https://github.com/gauteh/roaring-landmask/workflows/Build%20wheels/badge.svg)](https://github.com/gauteh/roaring-landmask/actions)
+[![Rust](https://github.com/gauteh/roaring-landmask/workflows/Rust/badge.svg)](https://github.com/gauteh/roaring-landmask/actions)
+[![Python](https://github.com/gauteh/roaring-landmask/workflows/Python/badge.svg)](https://github.com/gauteh/roaring-landmask/actions)
 
 # The Roaring Landmask
 
