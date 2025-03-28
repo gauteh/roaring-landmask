@@ -12,19 +12,19 @@ pub use crate::providers::LandmaskProvider;
 #[pyclass]
 pub struct Shapes {
     // prepped requires `geom` above to be around, and is valid as long as geom is alive.
-    geom: Geometry,
-    prepped: PreparedGeometry,
+    geom: *mut Geometry,
+    prepped: PreparedGeometry<'static>,
 }
 
-// impl Drop for Shapes {
-//     fn drop(&mut self) {
-//         unsafe { drop(Box::from_raw(self.geom)) }
-//     }
-// }
+impl Drop for Shapes {
+    fn drop(&mut self) {
+        unsafe { drop(Box::from_raw(self.geom)) }
+    }
+}
 
 // PreparedGeometry is Send+Sync, Geometry is Send+Sync. *mut Geometry is never modified.
-// unsafe impl Send for Shapes {}
-// unsafe impl Sync for Shapes {}
+unsafe impl Send for Shapes {}
+unsafe impl Sync for Shapes {}
 
 // `PreparededGeometry::contains` needs a call to `contains` before it is thread-safe:
 // https://github.com/georust/geos/issues/95
@@ -36,27 +36,29 @@ fn warmup_prepped(prepped: &PreparedGeometry) {
 
 impl Clone for Shapes {
     fn clone(&self) -> Self {
-        let geom = Clone::clone(&self.geom);
-        let prepped = geom.to_prepared_geom().unwrap();
-        warmup_prepped(&prepped);
+        let geom = unsafe { Clone::clone(&*self.geom) };
+        // let geom = Clone::clone(&geom);
 
-        Shapes { geom, prepped }
+        Shapes::from_geom(geom).unwrap()
     }
 }
 
 impl Shapes {
     pub fn from_geom(geom: Geometry) -> io::Result<Shapes> {
-        // let bxd = Box::new(geom);
-        // let gptr = Box::into_raw(bxd);
-        // let prepped = unsafe { (&*gptr).to_prepared_geom() }
-        //     .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "cannot prepare geomtry"))?;
-
-        let prepped = geom
-            .to_prepared_geom()
+        let bxd = Box::new(geom);
+        let gptr = Box::into_raw(bxd);
+        let prepped = unsafe { (&*gptr).to_prepared_geom() }
             .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "cannot prepare geomtry"))?;
+
+        // let prepped = geom
+        //     .to_prepared_geom()
+        //     .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "cannot prepare geomtry"))?;
         warmup_prepped(&prepped);
 
-        Ok(Shapes { geom, prepped })
+        Ok(Shapes {
+            geom: gptr,
+            prepped,
+        })
     }
 
     pub fn from_compressed<P: AsRef<Path>>(path: P) -> io::Result<Shapes> {

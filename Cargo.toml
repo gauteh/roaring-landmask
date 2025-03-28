@@ -18,7 +18,7 @@ name = "make_bitmap"
 path = "src/devel/make_bitmap.rs"
 
 [dependencies]
-geos = { version = "9" }
+geos = { version = "10" }
 lazy_static = "1.4"
 numpy = { version = "0.21" }
 pyo3 = { version = "0.21" , features = [ "abi3-py39" ] }
