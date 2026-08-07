@@ -1,69 +1,40 @@
-use pyo3::{prelude::*, types::PyBytes};
 use std::borrow::Borrow;
 use std::fs::File;
 use std::io::{self, prelude::*};
 use std::path::Path;
 
-use geos::{CoordSeq, Geom, Geometry, PreparedGeometry};
+use geo::{Geometry, Point, PreparedGeometry, Relate};
+use geozero::ToGeo;
 use numpy::{PyArray, PyReadonlyArrayDyn};
+use pyo3::{prelude::*, types::PyBytes};
 
 pub use crate::providers::LandmaskProvider;
 
 #[pyclass]
 pub struct Shapes {
-    // prepped requires `geom` above to be around, and is valid as long as geom is alive.
-    geom: *mut Geometry,
-    prepped: PreparedGeometry<'static>,
-}
-
-impl Drop for Shapes {
-    fn drop(&mut self) {
-        unsafe { drop(Box::from_raw(self.geom)) }
-    }
-}
-
-// PreparedGeometry is Send+Sync, Geometry is Send+Sync. *mut Geometry is never modified.
-unsafe impl Send for Shapes {}
-unsafe impl Sync for Shapes {}
-
-// `PreparededGeometry::contains` needs a call to `contains` before it is thread-safe:
-// https://github.com/georust/geos/issues/95
-fn warmup_prepped(prepped: &PreparedGeometry) {
-    let point = CoordSeq::new_from_vec(&[&[0.0, 0.0]]).unwrap();
-    let point = Geometry::create_point(point).unwrap();
-    prepped.contains(&point).unwrap();
+    prepped: PreparedGeometry<'static, Geometry>,
 }
 
 impl Clone for Shapes {
     fn clone(&self) -> Self {
-        let geom = unsafe { Clone::clone(&*self.geom) };
-        // let geom = Clone::clone(&geom);
-
-        Shapes::from_geom(geom).unwrap()
+        Shapes::from_geom(self.prepped.geometry().clone()).unwrap()
     }
 }
 
+// PreparedGeometry is Send (PR georust/geo#1571). It contains RefCell internally so is not
+// automatically Sync, but relate() only takes shared references and does not mutate across
+// threads through the prepared graph, so it is safe to share.
+unsafe impl Send for Shapes {}
+unsafe impl Sync for Shapes {}
+
 impl Shapes {
     pub fn from_geom(geom: Geometry) -> io::Result<Shapes> {
-        let bxd = Box::new(geom);
-        let gptr = Box::into_raw(bxd);
-        let prepped = unsafe { (&*gptr).to_prepared_geom() }
-            .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "cannot prepare geomtry"))?;
-
-        // let prepped = geom
-        //     .to_prepared_geom()
-        //     .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "cannot prepare geomtry"))?;
-        warmup_prepped(&prepped);
-
-        Ok(Shapes {
-            geom: gptr,
-            prepped,
-        })
+        let prepped = PreparedGeometry::from(geom);
+        Ok(Shapes { prepped })
     }
 
     pub fn from_compressed<P: AsRef<Path>>(path: P) -> io::Result<Shapes> {
         let g = Shapes::get_geometry_from_compressed(path)?;
-
         Shapes::from_geom(g)
     }
 
@@ -74,7 +45,8 @@ impl Shapes {
         let mut buf = Vec::new();
         fd.read_to_end(&mut buf)?;
 
-        Ok(geos::Geometry::new_from_wkb(&buf).unwrap())
+        geozero::wkb::Wkb(buf).to_geo()
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))
     }
 }
 
@@ -84,8 +56,9 @@ impl Shapes {
     #[staticmethod]
     pub fn new(py: Python, provider: LandmaskProvider) -> io::Result<Self> {
         let buf = Shapes::wkb(py, provider)?;
-        let g = geos::Geometry::new_from_wkb(buf.as_bytes()).unwrap();
-        Shapes::from_geom(g)
+        let geom = geozero::wkb::Wkb(buf.as_bytes().to_vec()).to_geo()
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
+        Shapes::from_geom(geom)
     }
 
     /// Get the WKB for the GSHHG shapes (full resolution).
@@ -120,16 +93,14 @@ impl Shapes {
         debug_assert!(x >= -180. && x <= 180.);
         assert!(y > -90. && y <= 90.);
 
-        let point = CoordSeq::new_from_vec(&[&[x as f64, y as f64]]).unwrap();
-        let point = Geometry::create_point(point).unwrap();
-        self.prepped.contains(&point).unwrap()
+        let point = Point::new(x, y);
+        self.prepped.relate(&point).is_contains()
     }
 
     /// Same as `contains`, but does not check for bounds.
     pub(crate) fn contains_unchecked(&self, x: f64, y: f64) -> bool {
-        let point = CoordSeq::new_from_vec(&[&[x, y]]).unwrap();
-        let point = Geometry::create_point(point).unwrap();
-        self.prepped.contains(&point).unwrap()
+        let point = Point::new(x, y);
+        self.prepped.relate(&point).is_contains()
     }
 
     pub fn contains_many(
@@ -239,3 +210,4 @@ mod tests {
         }
     }
 }
+

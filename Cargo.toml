@@ -18,7 +18,8 @@ name = "make_bitmap"
 path = "src/devel/make_bitmap.rs"
 
 [dependencies]
-geos = { version = "10" }
+geo = { git = "https://github.com/georust/geo", branch = "mkirk/prepared-send" }
+geozero = { version = "0.15", features = ["with-geo", "with-wkb"] }
 lazy_static = "1.4"
 numpy = { version = "0.21" }
 pyo3 = { version = "0.21" , features = [ "abi3-py39" ] }
@@ -38,7 +39,7 @@ path-slash = "0.2"
 [features]
 extension-module = ["pyo3/extension-module"]
 simd = [ "roaring/simd" ]
-static = [ "geos/static" ]
+static = []
 nightly = [ "simd" ]
 default = []
 
