@@ -107,6 +107,14 @@ jobs:
         with:
           python-version: 3.x
 
+      - name: Setup swap space
+        if: ${{ matrix.platform.target == 'aarch64' || matrix.platform.target == 'armv7' }}
+        run: |
+          sudo fallocate -l 8G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+
       - name: Install deps
         run: |
           sudo apt-get -y update
@@ -116,7 +124,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist
+          args: --release --out dist -j 2
           sccache: 'true'
           manylinux: musllinux_1_2
       # - name: Upload wheels
