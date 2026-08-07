@@ -1,4 +1,4 @@
-use geo::{Geometry, MultiPolygon, indexed::IntervalTreeMultiPolygon};
+use geo::{Geometry, indexed::IntervalTreeMultiPolygon};
 use geozero::ToGeo;
 use std::io::Read;
 use std::time::Instant;

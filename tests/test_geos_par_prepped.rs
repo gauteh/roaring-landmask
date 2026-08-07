@@ -16,7 +16,7 @@ fn test_par_prepped() {
         (0..10000).into_par_iter().for_each(|k| {
             let x = (k % 180) as f64;
             let y = ((k / 180) % 89 + 1) as f64;
-            shapes.contains_unchecked(x, y);
+            shapes.contains(x, y);
         });
     }
 }
