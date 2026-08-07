@@ -114,6 +114,8 @@ jobs:
 
       - name: Build wheels
         uses: PyO3/maturin-action@v1
+        env:
+          RUSTFLAGS: ${{ matrix.platform.target == 'armv7' && '-C force-frame-pointers=no' || '' }}
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist -j 2
