@@ -10,15 +10,10 @@ use pyo3::{prelude::*, types::PyBytes};
 
 pub use crate::providers::LandmaskProvider;
 
+#[derive(Clone)]
 #[pyclass]
 pub struct Shapes {
     prepped: PreparedGeometry<'static, Geometry>,
-}
-
-impl Clone for Shapes {
-    fn clone(&self) -> Self {
-        Shapes::from_geom(self.prepped.geometry().clone()).unwrap()
-    }
 }
 
 // PreparedGeometry is Send (PR georust/geo#1571). It contains RefCell internally so is not
