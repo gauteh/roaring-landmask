@@ -147,7 +147,7 @@ impl RoaringLandmask {
         let x = x.as_array();
         let y = y.as_array();
 
-        PyArray::from_iter_bound(
+        PyArray::from_iter(
             py,
             x.iter().zip(y.iter()).map(|(x, y)| self.contains(*x, *y)),
         )
@@ -164,10 +164,10 @@ impl RoaringLandmask {
         let y = y.as_array();
 
         use ndarray::Zip;
-        let contains = Zip::from(&x)
-            .and(&y)
+        let contains = Zip::from(x.view())
+            .and(y.view())
             .par_map_collect(|x, y| self.contains(*x, *y));
-        PyArray::from_owned_array_bound(py, contains).unbind()
+        PyArray::from_owned_array(py, contains).unbind()
     }
 }
 
@@ -318,8 +318,8 @@ mod tests {
                         })
                         .flatten()
                         .unzip();
-                    let x = PyArray::from_vec_bound(py, x);
-                    let y = PyArray::from_vec_bound(py, y);
+                    let x = PyArray::from_vec(py, x);
+                    let y = PyArray::from_vec(py, y);
                     println!("testing {} points..", x.len());
                     b.iter(|| {
                         let len = x.len();
@@ -350,8 +350,8 @@ mod tests {
                         })
                         .flatten()
                         .unzip();
-                    let x = PyArray::from_vec_bound(py, x);
-                    let y = PyArray::from_vec_bound(py, y);
+                    let x = PyArray::from_vec(py, x);
+                    let y = PyArray::from_vec(py, y);
                     println!("testing {} points..", x.len());
                     b.iter(|| {
                         let len = x.len();

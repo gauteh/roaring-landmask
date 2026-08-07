@@ -21,8 +21,8 @@ path = "src/devel/make_bitmap.rs"
 geo = { version = "0.33" }
 geozero = { version = "0.15", features = ["with-geo", "with-wkb"] }
 lazy_static = "1.4"
-numpy = { version = "0.21" }
-pyo3 = { version = "0.21" , features = [ "abi3-py39" ] }
+numpy = { version = "0.29" }
+pyo3 = { version = "0.29" , features = [ "abi3-py39" ] }
 roaring = "0.11"
 rust-embed = "8"
 xz2 = "0.1"
@@ -32,7 +32,7 @@ ndarray = { version = "0.15", features = [ "rayon" ] }
 rayon = "1"
 
 [build-dependencies]
-reqwest = { version = "0.12", default-features = false, features = [ "blocking", "rustls-tls" ] }
+reqwest = { version = "0.13", default-features = false, features = [ "blocking", "rustls" ] }
 ring = "0.17"
 path-slash = "0.2"
 
@@ -45,4 +45,4 @@ default = []
 
 [profile.release]
 debug = true
-
+# lto = "thin"

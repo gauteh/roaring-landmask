@@ -15,13 +15,13 @@ lazy_static! {
     static ref TRANSFORM: Affine = Affine::make();
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone, Debug, Default)]
 pub struct RoaringMask {
     tmap: RoaringTreemap,
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone, Debug, Default)]
 pub struct Affine {
     #[pyo3(get)]
@@ -161,7 +161,7 @@ impl RoaringMask {
         let x = x.as_array();
         let y = y.as_array();
 
-        PyArray::from_iter_bound(
+        PyArray::from_iter(
             py,
             x.iter().zip(y.iter()).map(|(x, y)| self.contains(*x, *y)),
         )
@@ -178,10 +178,10 @@ impl RoaringMask {
         let y = y.as_array();
 
         use ndarray::Zip;
-        let contains = Zip::from(&x)
-            .and(&y)
+        let contains = Zip::from(x.view())
+            .and(y.view())
             .par_map_collect(|x, y| self.contains(*x, *y));
-        PyArray::from_owned_array_bound(py, contains).unbind()
+        PyArray::from_owned_array(py, contains).unbind()
     }
 }
 

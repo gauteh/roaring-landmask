@@ -12,7 +12,7 @@ use pyo3::{prelude::*, types::PyBytes};
 pub use crate::providers::LandmaskProvider;
 
 #[derive(Clone)]
-#[pyclass]
+#[pyclass(from_py_object)]
 pub struct Shapes {
     tree: Arc<IntervalTreeMultiPolygon<f64>>,
 }
@@ -66,7 +66,7 @@ impl Shapes {
 
     /// Get the WKB for the GSHHG shapes (full resolution).
     #[staticmethod]
-    pub fn wkb(py: Python<'_>, provider: LandmaskProvider) -> io::Result<&PyBytes> {
+    pub fn wkb(py: Python<'_>, provider: LandmaskProvider) -> io::Result<Bound<'_, PyBytes>> {
         use crate::GsshgData;
         use crate::OsmData;
 
@@ -82,7 +82,7 @@ impl Shapes {
         let mut buf = Vec::new();
         fd.read_to_end(&mut buf)?;
 
-        Ok(PyBytes::new_bound(py, &buf).into_gil_ref())
+        Ok(PyBytes::new(py, &buf))
     }
 
     /// Check if point (x, y) is on land.
@@ -113,7 +113,7 @@ impl Shapes {
         let x = x.as_array();
         let y = y.as_array();
 
-        PyArray::from_iter_bound(
+        PyArray::from_iter(
             py,
             x.iter().zip(y.iter()).map(|(x, y)| self.contains(*x, *y)),
         )
@@ -130,10 +130,10 @@ impl Shapes {
         let y = y.as_array();
 
         use ndarray::Zip;
-        let contains = Zip::from(&x)
-            .and(&y)
+        let contains = Zip::from(x.view())
+            .and(y.view())
             .par_map_collect(|x, y| self.contains(*x, *y));
-        PyArray::from_owned_array_bound(py, contains).unbind()
+        PyArray::from_owned_array(py, contains).unbind()
     }
 }
 
