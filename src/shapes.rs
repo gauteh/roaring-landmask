@@ -149,8 +149,8 @@ mod tests {
 
     #[test]
     fn test_load() {
-        pyo3::prepare_freethreaded_python();
-        Python::with_gil(|py| {
+        pyo3::Python::initialize();
+        Python::attach(|py| {
             Shapes::new(py, LandmaskProvider::Gshhg).unwrap();
             Shapes::new(py, LandmaskProvider::Osm).unwrap();
         });
@@ -158,8 +158,8 @@ mod tests {
 
     #[test]
     fn test_np() {
-        pyo3::prepare_freethreaded_python();
-        Python::with_gil(|py| {
+        pyo3::Python::initialize();
+        Python::attach(|py| {
             let mask = Shapes::new(py, LandmaskProvider::Gshhg).unwrap();
             assert!(!mask.contains(5., 90.));
 
@@ -170,8 +170,8 @@ mod tests {
 
     #[test]
     fn test_sp() {
-        pyo3::prepare_freethreaded_python();
-        Python::with_gil(|py| {
+        pyo3::Python::initialize();
+        Python::attach(|py| {
             let mask = Shapes::new(py, LandmaskProvider::Gshhg).unwrap();
             assert!(mask.contains(5., -89.99));
 
@@ -187,8 +187,8 @@ mod tests {
 
         #[bench]
         fn test_contains_on_land(b: &mut Bencher) {
-            pyo3::prepare_freethreaded_python();
-            Python::with_gil(|py| {
+            pyo3::Python::initialize();
+            Python::attach(|py| {
                 for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                     let s = Shapes::new(py, provider).unwrap();
                     assert!(s.contains(15., 65.6));
@@ -200,8 +200,8 @@ mod tests {
 
         #[bench]
         fn test_contains_in_ocean(b: &mut Bencher) {
-            pyo3::prepare_freethreaded_python();
-            Python::with_gil(|py| {
+            pyo3::Python::initialize();
+            Python::attach(|py| {
                 for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                     let s = Shapes::new(py, provider).unwrap();
                     assert!(!s.contains(5., 65.6));

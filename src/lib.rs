@@ -22,8 +22,8 @@
 //! # use std::io;
 //! # fn main() -> io::Result<()> {
 //! #
-//! # pyo3::prepare_freethreaded_python();
-//! # pyo3::Python::with_gil(|py| {
+//! # pyo3::Python::initialize();
+//! # pyo3::Python::attach(|py| {
 //! use roaring_landmask::RoaringLandmask;
 //!
 //! let mask = RoaringLandmask::new(py).unwrap();
@@ -182,8 +182,8 @@ mod tests {
 
     #[test]
     fn load_ms() {
-        pyo3::prepare_freethreaded_python();
-        pyo3::Python::with_gil(|py| {
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
             let _ms = RoaringLandmask::new_with_provider(py, LandmaskProvider::Gshhg).unwrap();
             let _ms = RoaringLandmask::new_with_provider(py, LandmaskProvider::Osm).unwrap();
         })
@@ -191,8 +191,8 @@ mod tests {
 
     #[test]
     fn test_np() {
-        pyo3::prepare_freethreaded_python();
-        pyo3::Python::with_gil(|py| {
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
             let mask = RoaringLandmask::new_with_provider(py, LandmaskProvider::Gshhg).unwrap();
             assert!(!mask.contains(5., 90.));
 
@@ -203,8 +203,8 @@ mod tests {
 
     #[test]
     fn test_sp() {
-        pyo3::prepare_freethreaded_python();
-        pyo3::Python::with_gil(|py| {
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
             let mask = RoaringLandmask::new_with_provider(py, LandmaskProvider::Gshhg).unwrap();
             assert!(mask.contains(5., -89.99));
 
@@ -216,8 +216,8 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_sp_oob() {
-        pyo3::prepare_freethreaded_python();
-        pyo3::Python::with_gil(|py| {
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
             let mask = RoaringLandmask::new_with_provider(py, LandmaskProvider::Gshhg).unwrap();
             assert!(mask.contains(5., -90.));
 
@@ -228,8 +228,8 @@ mod tests {
 
     #[test]
     fn test_dateline_wrap() {
-        pyo3::prepare_freethreaded_python();
-        pyo3::Python::with_gil(|py| {
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
             for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                 let mask = RoaringLandmask::new_with_provider(py, provider).unwrap();
                 // Close to NP
@@ -250,8 +250,8 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_not_on_earth_north() {
-        pyo3::prepare_freethreaded_python();
-        pyo3::Python::with_gil(|py| {
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
             let mask = RoaringLandmask::new_with_provider(py, LandmaskProvider::Gshhg).unwrap();
             assert!(!mask.contains(5., 95.));
 
@@ -263,8 +263,8 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_not_on_earth_south() {
-        pyo3::prepare_freethreaded_python();
-        pyo3::Python::with_gil(|py| {
+        pyo3::Python::initialize();
+        pyo3::Python::attach(|py| {
             let mask = RoaringLandmask::new_with_provider(py, LandmaskProvider::Gshhg).unwrap();
             assert!(!mask.contains(5., -95.));
 
@@ -276,12 +276,13 @@ mod tests {
     #[cfg(feature = "nightly")]
     mod benches {
         use super::*;
+        use numpy::{PyArrayMethods, PyUntypedArrayMethods};
         use test::Bencher;
 
         #[bench]
         fn test_contains_on_land(b: &mut Bencher) {
-            pyo3::prepare_freethreaded_python();
-            pyo3::Python::with_gil(|py| {
+            pyo3::Python::initialize();
+            pyo3::Python::attach(|py| {
                 for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                     let mask = RoaringLandmask::new_with_provider(py, provider).unwrap();
                     assert!(mask.contains(15., 65.6));
@@ -293,8 +294,8 @@ mod tests {
 
         #[bench]
         fn test_contains_in_ocean(b: &mut Bencher) {
-            pyo3::prepare_freethreaded_python();
-            pyo3::Python::with_gil(|py| {
+            pyo3::Python::initialize();
+            pyo3::Python::attach(|py| {
                 for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                     let mask = RoaringLandmask::new_with_provider(py, provider).unwrap();
                     assert!(!mask.contains(5., 65.6));
@@ -305,8 +306,8 @@ mod tests {
 
         #[bench]
         fn test_contains_many(b: &mut Bencher) {
-            pyo3::prepare_freethreaded_python();
-            pyo3::Python::with_gil(|py| {
+            pyo3::Python::initialize();
+            pyo3::Python::attach(|py| {
                 for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                     let mask = RoaringLandmask::new_with_provider(py, provider).unwrap();
                     let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
@@ -337,8 +338,8 @@ mod tests {
         #[bench]
         #[ignore]
         fn test_contains_many_par(b: &mut Bencher) {
-            pyo3::prepare_freethreaded_python();
-            pyo3::Python::with_gil(|py| {
+            pyo3::Python::initialize();
+            pyo3::Python::attach(|py| {
                 for provider in [LandmaskProvider::Gshhg, LandmaskProvider::Osm] {
                     let mask = RoaringLandmask::new_with_provider(py, provider).unwrap();
                     let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
