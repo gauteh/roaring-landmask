@@ -2,8 +2,9 @@ use std::borrow::Borrow;
 use std::fs::File;
 use std::io::{self, prelude::*};
 use std::path::Path;
+use std::sync::Arc;
 
-use geo::{Geometry, Point, PreparedGeometry, Relate};
+use geo::{Contains, Geometry, MultiPolygon, Point, indexed::IntervalTreeMultiPolygon};
 use geozero::ToGeo;
 use numpy::{PyArray, PyReadonlyArrayDyn};
 use pyo3::{prelude::*, types::PyBytes};
@@ -13,19 +14,24 @@ pub use crate::providers::LandmaskProvider;
 #[derive(Clone)]
 #[pyclass]
 pub struct Shapes {
-    prepped: PreparedGeometry<'static, Geometry>,
+    tree: Arc<IntervalTreeMultiPolygon<f64>>,
 }
 
-// PreparedGeometry is Send (PR georust/geo#1571). It contains RefCell internally so is not
-// automatically Sync, but relate() only takes shared references and does not mutate across
-// threads through the prepared graph, so it is safe to share.
-unsafe impl Send for Shapes {}
-unsafe impl Sync for Shapes {}
-
 impl Shapes {
+    pub fn from_multipolygon(mp: MultiPolygon) -> Shapes {
+        Shapes {
+            tree: Arc::new(IntervalTreeMultiPolygon::new(&mp)),
+        }
+    }
+
     pub fn from_geom(geom: Geometry) -> io::Result<Shapes> {
-        let prepped = PreparedGeometry::from(geom);
-        Ok(Shapes { prepped })
+        match geom {
+            Geometry::MultiPolygon(mp) => Ok(Shapes::from_multipolygon(mp)),
+            _ => Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "expected MultiPolygon geometry",
+            )),
+        }
     }
 
     pub fn from_compressed<P: AsRef<Path>>(path: P) -> io::Result<Shapes> {
@@ -40,7 +46,8 @@ impl Shapes {
         let mut buf = Vec::new();
         fd.read_to_end(&mut buf)?;
 
-        geozero::wkb::Wkb(buf).to_geo()
+        geozero::wkb::Wkb(buf)
+            .to_geo()
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))
     }
 }
@@ -51,7 +58,8 @@ impl Shapes {
     #[staticmethod]
     pub fn new(py: Python, provider: LandmaskProvider) -> io::Result<Self> {
         let buf = Shapes::wkb(py, provider)?;
-        let geom = geozero::wkb::Wkb(buf.as_bytes().to_vec()).to_geo()
+        let geom = geozero::wkb::Wkb(buf.as_bytes().to_vec())
+            .to_geo()
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
         Shapes::from_geom(geom)
     }
@@ -88,14 +96,12 @@ impl Shapes {
         debug_assert!(x >= -180. && x <= 180.);
         assert!(y > -90. && y <= 90.);
 
-        let point = Point::new(x, y);
-        self.prepped.relate(&point).is_contains()
+        self.tree.contains(&Point::new(x, y))
     }
 
     /// Same as `contains`, but does not check for bounds.
     pub(crate) fn contains_unchecked(&self, x: f64, y: f64) -> bool {
-        let point = Point::new(x, y);
-        self.prepped.relate(&point).is_contains()
+        self.tree.contains(&Point::new(x, y))
     }
 
     pub fn contains_many(

@@ -1,4 +1,4 @@
-use geo::PreparedGeometry;
+use geo::{Geometry, MultiPolygon, indexed::IntervalTreeMultiPolygon};
 use geozero::ToGeo;
 use std::io::Read;
 use std::time::Instant;
@@ -12,19 +12,20 @@ fn time_load(path: &str) {
     let mut fd = xz2::bufread::XzDecoder::new(fd);
     let mut buf = Vec::new();
     fd.read_to_end(&mut buf).unwrap();
-    println!("  decompress:             {:>8.1?}  ({} bytes)", t.elapsed(), buf.len());
+    println!("  decompress:                    {:>8.1?}  ({} bytes)", t.elapsed(), buf.len());
 
     let t = Instant::now();
     let geom = geozero::wkb::Wkb(buf).to_geo().unwrap();
-    println!("  geozero WKB parse:      {:>8.1?}", t.elapsed());
+    println!("  geozero WKB parse:             {:>8.1?}", t.elapsed());
+
+    let mp = match geom {
+        Geometry::MultiPolygon(mp) => mp,
+        _ => panic!("expected MultiPolygon"),
+    };
 
     let t = Instant::now();
-    let prepped = PreparedGeometry::from(geom);
-    println!("  PreparedGeometry::from: {:>8.1?}", t.elapsed());
-
-    let t = Instant::now();
-    let _cloned = prepped.clone();
-    println!("  PreparedGeometry::clone:{:>8.1?}", t.elapsed());
+    let _tree = IntervalTreeMultiPolygon::<f64>::new(&mp);
+    println!("  IntervalTreeMultiPolygon::new: {:>8.1?}", t.elapsed());
 }
 
 #[test]
