@@ -87,8 +87,11 @@ fn copy_or_download(from: impl AsRef<Path>, csum: &str) {
     }
 
     // Check check-sum
-    use ring::{digest, test};
-    let expected: Vec<u8> = test::from_hex(csum).unwrap();
+    use ring::digest;
+    let expected: Vec<u8> = (0..csum.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&csum[i..i + 2], 16).unwrap())
+        .collect();
     let actual = digest::digest(&digest::SHA256, &fs::read(&full_to).unwrap());
     if &expected != &actual.as_ref() {
         // Delete erronous file

@@ -66,7 +66,7 @@ impl Shapes {
 
     /// Get the WKB for the GSHHG shapes (full resolution).
     #[staticmethod]
-    pub fn wkb(py: Python, provider: LandmaskProvider) -> io::Result<&PyBytes> {
+    pub fn wkb(py: Python<'_>, provider: LandmaskProvider) -> io::Result<&PyBytes> {
         use crate::GsshgData;
         use crate::OsmData;
 
@@ -82,7 +82,7 @@ impl Shapes {
         let mut buf = Vec::new();
         fd.read_to_end(&mut buf)?;
 
-        Ok(PyBytes::new(py, &buf))
+        Ok(PyBytes::new_bound(py, &buf).into_gil_ref())
     }
 
     /// Check if point (x, y) is on land.
@@ -113,11 +113,11 @@ impl Shapes {
         let x = x.as_array();
         let y = y.as_array();
 
-        PyArray::from_iter(
+        PyArray::from_iter_bound(
             py,
             x.iter().zip(y.iter()).map(|(x, y)| self.contains(*x, *y)),
         )
-        .to_owned()
+        .unbind()
     }
 
     pub fn contains_many_par(
@@ -133,7 +133,7 @@ impl Shapes {
         let contains = Zip::from(&x)
             .and(&y)
             .par_map_collect(|x, y| self.contains(*x, *y));
-        PyArray::from_owned_array(py, contains).to_owned()
+        PyArray::from_owned_array_bound(py, contains).unbind()
     }
 }
 

@@ -11,7 +11,7 @@ def test_make_landmask(provider):
 def test_landmask_onland(benchmark, provider):
     l = RoaringLandmask.new_with_provider(provider)
 
-    onland = (np.array([15.]), np.array([65.6]))
+    onland = (15., 65.6)
     c = benchmark(l.contains, onland[0], onland[1])
     assert c
 

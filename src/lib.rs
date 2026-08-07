@@ -77,7 +77,7 @@ pub use shapes::Shapes;
 include!(concat!(env!("OUT_DIR"), "/source_data.rs"));
 
 #[pymodule]
-fn roaring_landmask(_py: Python, m: &PyModule) -> PyResult<()> {
+fn roaring_landmask(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<mask::Affine>()?;
     m.add_class::<RoaringMask>()?;
     m.add_class::<Shapes>()?;
@@ -147,11 +147,11 @@ impl RoaringLandmask {
         let x = x.as_array();
         let y = y.as_array();
 
-        PyArray::from_iter(
+        PyArray::from_iter_bound(
             py,
             x.iter().zip(y.iter()).map(|(x, y)| self.contains(*x, *y)),
         )
-        .to_owned()
+        .unbind()
     }
 
     pub fn contains_many_par(
@@ -167,7 +167,7 @@ impl RoaringLandmask {
         let contains = Zip::from(&x)
             .and(&y)
             .par_map_collect(|x, y| self.contains(*x, *y));
-        PyArray::from_owned_array(py, contains).to_owned()
+        PyArray::from_owned_array_bound(py, contains).unbind()
     }
 }
 
@@ -318,17 +318,8 @@ mod tests {
                         })
                         .flatten()
                         .unzip();
-                    let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
-                        .map(|v| v as f64 * 0.5 - 180.)
-                        .map(|x| {
-                            (0..180 * 2)
-                                .map(|y| y as f64 * 0.5 - 90.)
-                                .map(move |y| (x, y))
-                        })
-                        .flatten()
-                        .unzip();
-                    let x = PyArray::from_vec(py, x);
-                    let y = PyArray::from_vec(py, y);
+                    let x = PyArray::from_vec_bound(py, x);
+                    let y = PyArray::from_vec_bound(py, y);
                     println!("testing {} points..", x.len());
                     b.iter(|| {
                         let len = x.len();
@@ -337,7 +328,7 @@ mod tests {
                         let y = y.to_dyn().readonly();
 
                         let onland = mask.contains_many(py, x, y);
-                        assert!(onland.as_ref(py).len() == len);
+                        assert!(onland.bind(py).len() == len);
                     });
                 }
             })
@@ -359,17 +350,8 @@ mod tests {
                         })
                         .flatten()
                         .unzip();
-                    let (x, y): (Vec<f64>, Vec<f64>) = (0..360 * 2)
-                        .map(|v| v as f64 * 0.5 - 180.)
-                        .map(|x| {
-                            (0..180 * 2)
-                                .map(|y| y as f64 * 0.5 - 90.)
-                                .map(move |y| (x, y))
-                        })
-                        .flatten()
-                        .unzip();
-                    let x = PyArray::from_vec(py, x);
-                    let y = PyArray::from_vec(py, y);
+                    let x = PyArray::from_vec_bound(py, x);
+                    let y = PyArray::from_vec_bound(py, y);
                     println!("testing {} points..", x.len());
                     b.iter(|| {
                         let len = x.len();
@@ -378,7 +360,7 @@ mod tests {
                         let y = y.to_dyn().readonly();
 
                         let onland = mask.contains_many_par(py, x, y);
-                        assert!(onland.as_ref(py).len() == len);
+                        assert!(onland.bind(py).len() == len);
                     });
                 }
             })
