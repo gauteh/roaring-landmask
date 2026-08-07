@@ -27,14 +27,16 @@ cargo build
 Tests require `LD_LIBRARY_PATH` to be set (see above).
 
 ```sh
-cargo test
+cargo test -r
 ```
 
 Or explicitly:
 
 ```sh
-LD_LIBRARY_PATH=$HOME/.mconda3/envs/opendrift/lib cargo test
+LD_LIBRARY_PATH=$HOME/.mconda3/envs/opendrift/lib cargo test -r
 ```
+
+Use release-mode, otherwise geometry tests are very slow.
 
 ## Benchmarks
 
@@ -45,7 +47,3 @@ default (see `rustup show`).
 ```sh
 LD_LIBRARY_PATH=$HOME/.mconda3/envs/opendrift/lib cargo bench --features nightly
 ```
-
-> **Note:** Benchmarks currently fail to compile on recent nightly due to
-> changes in SIMD/`std::simd` — this is a known issue with the `simd` feature
-> in the `roaring` dependency.
