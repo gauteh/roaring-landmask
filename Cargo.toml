@@ -18,7 +18,7 @@ name = "make_bitmap"
 path = "src/devel/make_bitmap.rs"
 
 [dependencies]
-geo = { git = "https://github.com/georust/geo", branch = "mkirk/prepared-send" }
+geo = { version = "0.33" }
 geozero = { version = "0.15", features = ["with-geo", "with-wkb"] }
 lazy_static = "1.4"
 numpy = { version = "0.21" }
