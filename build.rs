@@ -16,7 +16,7 @@ pub static OSM_SHA256: &str = "7cbbbb56dc8f6a339d837e57aac4c50c9f54e7ac111880327
 
 pub static OSM_MASK: &str = "osm_mask.tbmap.xz";
 pub static OSM_MASK_SHA256: &str =
-    "e60dd30737ad8480619d727bb246a1107d30a66563b73628337dc3f92255b684";
+    "801bcff8e96c4ac97c0dfa8db8e0be659b544b42ffad2fbfc027d4fa26c88be7";
 
 fn main() {
     println!("hello");

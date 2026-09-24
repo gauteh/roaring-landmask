@@ -17,6 +17,10 @@ crate-type = ["rlib", "cdylib"]
 name = "make_bitmap"
 path = "src/devel/make_bitmap.rs"
 
+[[bin]]
+name = "rasterize_osm"
+path = "src/devel/rasterize_osm.rs"
+
 [dependencies]
 geo = { version = "0.33" }
 geozero = { version = "0.15", features = ["with-geo", "with-wkb"] }
@@ -27,6 +31,8 @@ roaring = "0.11"
 rust-embed = "8"
 xz2 = "0.1"
 ndarray = { version = "0.17", features = [ "rayon" ] }
+geo-rasterize = "0.1.2"
+geo018 = { package = "geo", version = "0.18" }
 
 [dev-dependencies]
 rayon = "1"

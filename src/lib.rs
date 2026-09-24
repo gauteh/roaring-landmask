@@ -130,6 +130,12 @@ impl RoaringLandmask {
     ///
     ///
     /// Returns `true` if the point is on land or close to the shore.
+    ///
+    /// This combines the raster pre-filter (`self.mask`) with the precise vector
+    /// polygon test (`self.shapes`) via AND, which is only valid when the raster
+    /// is a strict superset of the vector shapes for the same provider (see the
+    /// "optimistic" note on `RoaringMask::contains`) -- keep this invariant in
+    /// mind if either asset is ever regenerated.
     pub fn contains(&self, x: f64, y: f64) -> bool {
         assert!(y >= -90. && y <= 90.);
 
